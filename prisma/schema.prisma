@@ -22,6 +22,24 @@ enum Role {
   ADMIN
 }
 
+enum AppointmentType {
+  ONLINE
+  CHAMBER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
 // ──────────────────────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────────────────────
@@ -49,38 +67,43 @@ model User {
 }
 
 model PatientProfile {
-  id               String    @id @default(uuid())
-  userId           String    @unique @map("user_id")
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bloodGroup       String?   @map("blood_group")
-  dob              DateTime? @map("dob")
-  gender           String?   @map("gender")
-  emergencyContact String?   @map("emergency_contact")
-  medicalAllergies String[]  @default([]) @map("medical_allergies")
-  deletedAt        DateTime? @map("deleted_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id               String        @id @default(uuid())
+  userId           String        @unique @map("user_id")
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bloodGroup       String?       @map("blood_group")
+  dob              DateTime?     @map("dob")
+  gender           String?       @map("gender")
+  emergencyContact String?       @map("emergency_contact")
+  medicalAllergies String[]      @default([]) @map("medical_allergies")
+  deletedAt        DateTime?     @map("deleted_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  appointments     Appointment[]
 
   @@map("patient_profiles")
 }
 
 model DoctorProfile {
-  id              String    @id @default(uuid())
-  userId          String    @unique @map("user_id")
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bmdcRegNo       String    @unique @map("bmdc_reg_no")
+  id              String               @id @default(uuid())
+  userId          String               @unique @map("user_id")
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bmdcRegNo       String               @unique @map("bmdc_reg_no")
   specialization  String
-  qualifications  String[]  @default([])
-  experienceYears Int       @default(0) @map("experience_years")
-  consultFee      Float     @default(0) @map("consult_fee")
-  followUpFee     Float     @default(0) @map("follow_up_fee")
-  isApproved      Boolean   @default(false) @map("is_approved")
+  qualifications  String[]             @default([])
+  experienceYears Int                  @default(0) @map("experience_years")
+  consultFee      Float                @default(0) @map("consult_fee")
+  followUpFee     Float                @default(0) @map("follow_up_fee")
+  isApproved      Boolean              @default(false) @map("is_approved")
   bio             String?
-  rating          Float     @default(0.0)
-  reviewCount     Int       @default(0) @map("review_count")
-  deletedAt       DateTime? @map("deleted_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  rating          Float                @default(0.0)
+  reviewCount     Int                  @default(0) @map("review_count")
+  deletedAt       DateTime?            @map("deleted_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  availabilities  DoctorAvailability[]
+  appointments    Appointment[]
 
   @@map("doctor_profiles")
 }
@@ -113,4 +136,41 @@ model PharmacyProfile {
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   @@map("pharmacy_profiles")
+}
+
+model DoctorAvailability {
+  id                  String        @id @default(uuid())
+  doctorId            String        @map("doctor_id")
+  doctor              DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek           String        @map("day_of_week")
+  startTime           String        @map("start_time")
+  endTime             String        @map("end_time")
+  slotDurationMinutes Int           @default(30) @map("slot_duration_minutes")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  @@index([doctorId, dayOfWeek])
+  @@map("doctor_availabilities")
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  doctorId      String            @map("doctor_id")
+  doctor        DoctorProfile     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patientId     String            @map("patient_id")
+  patient       PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  slotStartTime DateTime          @map("slot_start_time")
+  slotEndTime   DateTime          @map("slot_end_time")
+  type          AppointmentType   @default(ONLINE)
+  status        AppointmentStatus @default(PENDING)
+  paymentStatus PaymentStatus     @default(UNPAID) @map("payment_status")
+  meetingRoomId String?           @map("meeting_room_id")
+  notes         String?
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@unique([doctorId, slotStartTime])
+  @@index([doctorId, status])
+  @@index([patientId, status])
+  @@map("appointments")
 }

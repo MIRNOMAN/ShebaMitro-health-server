@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, AppointmentType, AppointmentStatus, PaymentStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -8,7 +8,9 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
-  // Clear existing records safely
+  // Clear existing records safely in order of dependency
+  await prisma.appointment.deleteMany();
+  await prisma.doctorAvailability.deleteMany();
   await prisma.patientProfile.deleteMany();
   await prisma.doctorProfile.deleteMany();
   await prisma.labProfile.deleteMany();
@@ -39,7 +41,7 @@ async function main() {
 
   // 3 & 4: Patients (2)
   console.log(' Creating Patient users and profiles...');
-  await prisma.user.create({
+  const patient1User = await prisma.user.create({
     data: {
       email: 'rahim.patient@gmail.com',
       phone: '+8801811112221',
@@ -56,6 +58,7 @@ async function main() {
         },
       },
     },
+    include: { patientProfile: true },
   });
 
   await prisma.user.create({
@@ -78,8 +81,8 @@ async function main() {
   });
 
   // 5 & 6: Doctors (2)
-  console.log(' Creating Doctor users and profiles...');
-  await prisma.user.create({
+  console.log(' Creating Doctor users, profiles, and availabilities...');
+  const doctor1User = await prisma.user.create({
     data: {
       email: 'dr.noman@shebamitro.com',
       phone: '+8801922223331',
@@ -98,9 +101,16 @@ async function main() {
           bio: 'Senior Consultant Cardiologist specializing in interventional cardiology and preventive care.',
           rating: 4.9,
           reviewCount: 128,
+          availabilities: {
+            create: [
+              { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '13:00', slotDurationMinutes: 30 },
+              { dayOfWeek: 'WEDNESDAY', startTime: '14:00', endTime: '18:00', slotDurationMinutes: 30 },
+            ],
+          },
         },
       },
     },
+    include: { doctorProfile: true },
   });
 
   await prisma.user.create({
@@ -122,6 +132,12 @@ async function main() {
           bio: 'Compassionate Pediatrician dedicated to child growth and developmental healthcare.',
           rating: 4.8,
           reviewCount: 94,
+          availabilities: {
+            create: [
+              { dayOfWeek: 'TUESDAY', startTime: '10:00', endTime: '14:00', slotDurationMinutes: 30 },
+              { dayOfWeek: 'THURSDAY', startTime: '15:00', endTime: '19:00', slotDurationMinutes: 30 },
+            ],
+          },
         },
       },
     },
@@ -214,7 +230,29 @@ async function main() {
     },
   });
 
-  console.log('✅ Seeding completed! Created 10 dummy providers across all 5 roles.');
+  // Seed sample appointment with compound unique constraint check
+  if (doctor1User.doctorProfile && patient1User.patientProfile) {
+    console.log(' Creating sample appointment...');
+    const slotStart = new Date();
+    slotStart.setHours(10, 0, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+
+    await prisma.appointment.create({
+      data: {
+        doctorId: doctor1User.doctorProfile.id,
+        patientId: patient1User.patientProfile.id,
+        slotStartTime: slotStart,
+        slotEndTime: slotEnd,
+        type: AppointmentType.ONLINE,
+        status: AppointmentStatus.CONFIRMED,
+        paymentStatus: PaymentStatus.PAID,
+        meetingRoomId: 'room-cardiology-101',
+        notes: 'Routine cardiovascular checkup and ECG review.',
+      },
+    });
+  }
+
+  console.log('✅ Seeding completed successfully!');
 }
 
 main()
