@@ -1,10 +1,4 @@
-/**
- * Seed script for populating the database with initial data.
- *
- * Run with: npx prisma db seed
- * (Configured in package.json under "prisma.seed")
- */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -12,7 +6,6 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create a default admin user
   const hashedPassword = await bcrypt.hash('admin123', 10);
 
   const admin = await prisma.user.upsert({
@@ -20,8 +13,10 @@ async function main() {
     update: {},
     create: {
       email: 'admin@example.com',
-      name: 'Admin User',
-      password: hashedPassword,
+      phone: '+8801700000000',
+      passwordHash: hashedPassword,
+      role: Role.ADMIN,
+      isVerified: true,
     },
   });
 

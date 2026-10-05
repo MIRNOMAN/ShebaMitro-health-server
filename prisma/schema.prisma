@@ -11,16 +11,52 @@ datasource db {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────────────────────
+
+enum Role {
+  PATIENT
+  DOCTOR
+  LAB
+  PHARMACY
+  ADMIN
+}
+
+// ──────────────────────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String          @id @default(uuid())
+  email            String          @unique
+  phone            String?         @unique
+  passwordHash     String          @map("password_hash")
+  role             Role            @default(PATIENT)
+  isVerified       Boolean         @default(false) @map("is_verified")
+  refreshTokenHash String?         @map("refresh_token_hash")
+  deletedAt        DateTime?       @map("deleted_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
 
+  patientProfile   PatientProfile?
+
+  @@index([email, role])
+  @@index([phone, isVerified])
   @@map("users")
+}
+
+model PatientProfile {
+  id               String    @id @default(uuid())
+  userId           String    @unique @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bloodGroup       String?   @map("blood_group")
+  dob              DateTime? @map("dob")
+  gender           String?   @map("gender")
+  emergencyContact String?   @map("emergency_contact")
+  medicalAllergies String[]  @default([]) @map("medical_allergies")
+  deletedAt        DateTime? @map("deleted_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("patient_profiles")
 }

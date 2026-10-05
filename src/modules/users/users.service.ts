@@ -2,14 +2,31 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import * as bcrypt from 'bcrypt';
+import { BCRYPT_SALT_ROUNDS } from '../../common/constants/index.js';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
+    const { password, ...rest } = createUserDto;
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
     return this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        ...rest,
+        passwordHash,
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -18,7 +35,9 @@ export class UsersService {
       select: {
         id: true,
         email: true,
-        name: true,
+        phone: true,
+        role: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -31,7 +50,9 @@ export class UsersService {
       select: {
         id: true,
         email: true,
-        name: true,
+        phone: true,
+        role: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -53,13 +74,21 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto) {
     await this.findOne(id); // ensure exists
 
+    const { password, ...rest } = updateUserDto as any;
+    let data: any = { ...rest };
+    if (password) {
+      data.passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data,
       select: {
         id: true,
         email: true,
-        name: true,
+        phone: true,
+        role: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true,
       },

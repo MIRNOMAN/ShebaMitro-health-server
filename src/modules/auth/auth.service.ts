@@ -8,7 +8,6 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
-import { BCRYPT_SALT_ROUNDS } from '../../common/constants/index.js';
 
 @Injectable()
 export class AuthService {
@@ -27,23 +26,17 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const hashedPassword = await bcrypt.hash(
-      registerDto.password,
-      BCRYPT_SALT_ROUNDS,
-    );
+    const user = await this.usersService.create(registerDto as any);
 
-    const user = await this.usersService.create({
-      ...registerDto,
-      password: hashedPassword,
-    });
-
-    const token = this.generateToken(user.id, user.email);
+    const token = this.generateToken(user.id, user.email, user.role);
 
     return {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        isVerified: user.isVerified,
       },
       accessToken: token,
     };
@@ -61,19 +54,21 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(
       loginDto.password,
-      user.password,
+      user.passwordHash,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.generateToken(user.id, user.email);
+    const token = this.generateToken(user.id, user.email, user.role);
 
     return {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        isVerified: user.isVerified,
       },
       accessToken: token,
     };
@@ -86,7 +81,7 @@ export class AuthService {
     return this.usersService.findOne(userId);
   }
 
-  private generateToken(userId: string, email: string): string {
-    return this.jwtService.sign({ sub: userId, email });
+  private generateToken(userId: string, email: string, role: string): string {
+    return this.jwtService.sign({ sub: userId, email, role });
   }
 }
