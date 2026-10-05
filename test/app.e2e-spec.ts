@@ -4,6 +4,7 @@ import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/database/prisma.service';
+import { RedisService } from './../src/common/redis/redis.service';
 
 describe('Production Application (e2e)', () => {
   let app: INestApplication;
@@ -21,12 +22,15 @@ describe('Production Application (e2e)', () => {
         }
         return null;
       }),
-      findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
+      findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string; phone?: string } }) => {
         if (where.email) {
           return mockUsersDatabase.find((u) => u.email === where.email && !u.deletedAt) || null;
         }
         if (where.id) {
           return mockUsersDatabase.find((u) => u.id === where.id && !u.deletedAt) || null;
+        }
+        if (where.phone) {
+          return mockUsersDatabase.find((u) => u.phone === where.phone && !u.deletedAt) || null;
         }
         return null;
       }),
@@ -351,6 +355,78 @@ describe('Production Application (e2e)', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('userId');
       expect(response.body.data).toHaveProperty('profile');
+    });
+  });
+
+  describe('OtpModule (Redis Rate Limit, 6-digit OTP, Verification & Claims)', () => {
+    const testPhone = '+8801700112233';
+    const rateLimitPhone = '+8801800112233';
+
+    it('POST /auth/request-otp - should generate 6-digit OTP and set 3-min TTL in Redis', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/request-otp')
+        .send({ phone: testPhone })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('phone', testPhone);
+      expect(response.body.data).toHaveProperty('ttlSeconds', 180);
+
+      const redisService = app.get(RedisService);
+      const storedOtp = await redisService.get(`otp:${testPhone}`);
+      expect(storedOtp).toBeDefined();
+      expect(storedOtp).toMatch(/^\d{6}$/);
+    });
+
+    it('POST /auth/request-otp - rate limit test (max 3 attempts per 10 minutes)', async () => {
+      // 1st, 2nd, 3rd attempts succeed
+      for (let i = 1; i <= 3; i++) {
+        await request(app.getHttpServer())
+          .post('/auth/request-otp')
+          .send({ phone: rateLimitPhone })
+          .expect(200);
+      }
+
+      // 4th attempt triggers 429 Too Many Requests
+      const response = await request(app.getHttpServer())
+        .post('/auth/request-otp')
+        .send({ phone: rateLimitPhone })
+        .expect(429);
+
+      expect(response.body.detail || response.body.message).toContain('Maximum 3 attempts per 10 minutes allowed');
+    });
+
+    it('POST /auth/verify-otp - should fail with 400 when invalid code is submitted', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/verify-otp')
+        .send({ phone: testPhone, code: '000000' })
+        .expect(400);
+
+      expect(response.body.detail || response.body.message).toContain('Invalid or expired OTP code');
+    });
+
+    it('POST /auth/verify-otp - should verify valid OTP, update isVerified: true, and issue onboarding claims', async () => {
+      const redisService = app.get(RedisService);
+      const validCode = await redisService.get(`otp:${testPhone}`);
+      expect(validCode).toBeDefined();
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/verify-otp')
+        .send({ phone: testPhone, code: validCode })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('isVerified', true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data.onboardingClaims).toEqual({
+        isVerified: true,
+        onboardingCompleted: true,
+        canAccessOnboarding: true,
+      });
+
+      // OTP should be cleared from Redis after verification
+      const clearedOtp = await redisService.get(`otp:${testPhone}`);
+      expect(clearedOtp).toBeNull();
     });
   });
 });
