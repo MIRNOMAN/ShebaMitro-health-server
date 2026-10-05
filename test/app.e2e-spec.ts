@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/database/prisma.service';
 
@@ -74,6 +75,7 @@ describe('Production Application (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     await app.init();
   });
 
@@ -227,6 +229,9 @@ describe('Production Application (e2e)', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe(testUser.email);
+
+      accessToken = response.body.data.accessToken;
+      refreshToken = response.body.data.refreshToken;
     });
 
     it('Account Lockout - 5 consecutive wrong password attempts should trigger lockout', async () => {
@@ -260,7 +265,7 @@ describe('Production Application (e2e)', () => {
         })
         .expect(403);
 
-      expect(response.body.detail || response.body.message).toContain('Account is locked');
+      expect(response.body.detail || response.body.message).toContain('Account locked');
     });
 
     it('POST /auth/refresh - should rotate access and refresh tokens', async () => {
@@ -288,6 +293,64 @@ describe('Production Application (e2e)', () => {
         const clearedAccessToken = cookies.some((c: string) => c.includes('access_token=;'));
         expect(clearedAccessToken).toBe(true);
       }
+    });
+  });
+
+  describe('RolesGuard & @CurrentUser Decorator', () => {
+    let adminAccessToken: string;
+    let patientAccessToken: string;
+
+    beforeAll(async () => {
+      // Register Admin user
+      const adminRes = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: `admin_${Date.now()}@shebamitro.com`,
+          password: 'AdminPassword123!',
+          role: 'ADMIN',
+        });
+      adminAccessToken = adminRes.body.data.accessToken;
+
+      // Register Patient user
+      const patientRes = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: `patient_${Date.now()}@shebamitro.com`,
+          password: 'PatientPassword123!',
+          role: 'PATIENT',
+        });
+      patientAccessToken = patientRes.body.data.accessToken;
+    });
+
+    it('GET /health/admin-only - should allow user with ADMIN role', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/health/admin-only')
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('userRole', 'ADMIN');
+      expect(response.body.data).toHaveProperty('userId');
+    });
+
+    it('GET /health/admin-only - should deny user with PATIENT role (403 Forbidden)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/health/admin-only')
+        .set('Authorization', `Bearer ${patientAccessToken}`)
+        .expect(403);
+
+      expect(response.body.detail || response.body.message).toContain('Access denied');
+    });
+
+    it('GET /users/me - should extract current authenticated user profile using @CurrentUser()', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/users/me')
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('userId');
+      expect(response.body.data).toHaveProperty('profile');
     });
   });
 });
