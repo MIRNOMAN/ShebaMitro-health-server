@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/database/prisma.service';
 import { RedisService } from './../src/common/redis/redis.service';
+import { PaginationService } from './../src/common/pagination/pagination.service';
+import { PaginationBenchmarkService } from './../src/common/pagination/pagination.benchmark';
 
 describe('Production Application (e2e)', () => {
   let app: INestApplication;
@@ -655,6 +657,69 @@ describe('Production Application (e2e)', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.items.length).toBe(1);
       expect(response.body.data.items[0].name).toBe('Dr. Nusrat Jahan');
+    });
+  });
+
+  describe('PaginationService & Composite Cursor Pagination Benchmark', () => {
+    let paginationService: PaginationService;
+    let benchmarkService: PaginationBenchmarkService;
+
+    beforeAll(() => {
+      paginationService = app.get(PaginationService);
+      benchmarkService = app.get(PaginationBenchmarkService);
+    });
+
+    it('should encode and decode base64 composite cursors [createdAt, id] correctly', () => {
+      const now = new Date('2026-10-05T16:00:00.000Z');
+      const id = 'uuid-9999-test';
+
+      const cursorStr = paginationService.encodeCursor(now, id);
+      expect(typeof cursorStr).toBe('string');
+      expect(cursorStr.length).toBeGreaterThan(0);
+
+      const decoded = paginationService.decodeCursor(cursorStr);
+      expect(decoded).toBeDefined();
+      expect(decoded?.id).toBe(id);
+      expect(decoded?.createdAt.toISOString()).toBe(now.toISOString());
+    });
+
+    it('should return null when decoding invalid or malformed base64 cursor strings', () => {
+      expect(paginationService.decodeCursor('')).toBeNull();
+      expect(paginationService.decodeCursor('invalid_base64_string')).toBeNull();
+    });
+
+    it('should perform cursor pagination over model data returning pageInfo with startCursor and endCursor', async () => {
+      const mockChatLogs = [
+        { id: 'msg-3', createdAt: new Date('2026-10-05T16:03:00.000Z'), content: 'Hello 3' },
+        { id: 'msg-2', createdAt: new Date('2026-10-05T16:02:00.000Z'), content: 'Hello 2' },
+        { id: 'msg-1', createdAt: new Date('2026-10-05T16:01:00.000Z'), content: 'Hello 1' },
+      ];
+
+      const mockModel = {
+        findMany: jest.fn(async () => mockChatLogs.slice(0, 2)),
+      };
+
+      const result = await paginationService.paginate(mockModel, {
+        cursorDto: { limit: 2, direction: 'forward' as any },
+      });
+
+      expect(result).toHaveProperty('data');
+      expect(result.data.length).toBe(2);
+      expect(result).toHaveProperty('pageInfo');
+      expect(result.pageInfo).toHaveProperty('startCursor');
+      expect(result.pageInfo).toHaveProperty('endCursor');
+      expect(result.pageInfo.startCursor).not.toBeNull();
+      expect(result.pageInfo.endCursor).not.toBeNull();
+    });
+
+    it('should execute benchmark comparing composite cursor vs offset queries on 100,000 entities', async () => {
+      const metrics = await benchmarkService.runBenchmark(100000);
+
+      expect(metrics).toHaveProperty('datasetSize', 100000);
+      expect(metrics).toHaveProperty('offsetPaginationMs');
+      expect(metrics).toHaveProperty('cursorPaginationMs');
+      expect(metrics).toHaveProperty('performanceGain');
+      expect(metrics.cursorPaginationMs.ultraDeepPage10000).toBeDefined();
     });
   });
 });
