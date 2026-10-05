@@ -1,4 +1,4 @@
-import { PrismaClient, Role, AppointmentType, AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { PrismaClient, Role, AppointmentType, AppointmentStatus, PaymentStatus, MealTiming } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -9,6 +9,11 @@ async function main() {
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
   // Clear existing records safely in order of dependency
+  await prisma.medicineReminder.deleteMany();
+  await prisma.prescriptionItem.deleteMany();
+  await prisma.labOrder.deleteMany();
+  await prisma.pharmacyOrder.deleteMany();
+  await prisma.prescription.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.doctorAvailability.deleteMany();
   await prisma.patientProfile.deleteMany();
@@ -230,14 +235,14 @@ async function main() {
     },
   });
 
-  // Seed sample appointment with compound unique constraint check
+  // Seed sample appointment & prescription
   if (doctor1User.doctorProfile && patient1User.patientProfile) {
-    console.log(' Creating sample appointment...');
+    console.log(' Creating sample appointment and prescription...');
     const slotStart = new Date();
     slotStart.setHours(10, 0, 0, 0);
     const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
 
-    await prisma.appointment.create({
+    const appointment = await prisma.appointment.create({
       data: {
         doctorId: doctor1User.doctorProfile.id,
         patientId: patient1User.patientProfile.id,
@@ -248,6 +253,40 @@ async function main() {
         paymentStatus: PaymentStatus.PAID,
         meetingRoomId: 'room-cardiology-101',
         notes: 'Routine cardiovascular checkup and ECG review.',
+      },
+    });
+
+    await prisma.prescription.create({
+      data: {
+        appointmentId: appointment.id,
+        doctorId: doctor1User.doctorProfile.id,
+        patientId: patient1User.patientProfile.id,
+        diagnosis: 'Essential Hypertension',
+        chiefComplaints: 'Occasional dizziness and high BP reading',
+        vitalsJson: { bp: '140/90', pulse: 78, weightKg: 72 },
+        advice: 'Reduce sodium intake, 30 min daily brisk walking.',
+        qrCodeHash: 'qr_hash_abc123xyz',
+        pdfUrl: 'https://cdn.shebamitro.com/prescriptions/rx_101.pdf',
+        items: {
+          create: [
+            {
+              medicineName: 'Seclo 20mg',
+              genericName: 'Omeprazole',
+              dosageForm: 'Capsule',
+              schedulePattern: '1+0+1',
+              mealTiming: MealTiming.BEFORE_MEAL,
+              durationDays: 14,
+            },
+            {
+              medicineName: 'Amlodin 5mg',
+              genericName: 'Amlodipine',
+              dosageForm: 'Tablet',
+              schedulePattern: '0+0+1',
+              mealTiming: MealTiming.AFTER_MEAL,
+              durationDays: 30,
+            },
+          ],
+        },
       },
     });
   }
