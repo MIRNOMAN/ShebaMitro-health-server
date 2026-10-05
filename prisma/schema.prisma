@@ -27,18 +27,21 @@ enum Role {
 // ──────────────────────────────────────────────────────────────
 
 model User {
-  id               String          @id @default(uuid())
-  email            String          @unique
-  phone            String?         @unique
-  passwordHash     String          @map("password_hash")
-  role             Role            @default(PATIENT)
-  isVerified       Boolean         @default(false) @map("is_verified")
-  refreshTokenHash String?         @map("refresh_token_hash")
-  deletedAt        DateTime?       @map("deleted_at")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
+  id               String           @id @default(uuid())
+  email            String           @unique
+  phone            String?          @unique
+  passwordHash     String           @map("password_hash")
+  role             Role             @default(PATIENT)
+  isVerified       Boolean          @default(false) @map("is_verified")
+  refreshTokenHash String?          @map("refresh_token_hash")
+  deletedAt        DateTime?        @map("deleted_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
 
   patientProfile   PatientProfile?
+  doctorProfile    DoctorProfile?
+  labProfile       LabProfile?
+  pharmacyProfile  PharmacyProfile?
 
   @@index([email, role])
   @@index([phone, isVerified])
@@ -59,4 +62,55 @@ model PatientProfile {
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@map("patient_profiles")
+}
+
+model DoctorProfile {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bmdcRegNo       String    @unique @map("bmdc_reg_no")
+  specialization  String
+  qualifications  String[]  @default([])
+  experienceYears Int       @default(0) @map("experience_years")
+  consultFee      Float     @default(0) @map("consult_fee")
+  followUpFee     Float     @default(0) @map("follow_up_fee")
+  isApproved      Boolean   @default(false) @map("is_approved")
+  bio             String?
+  rating          Float     @default(0.0)
+  reviewCount     Int       @default(0) @map("review_count")
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("doctor_profiles")
+}
+
+model LabProfile {
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNo    String    @unique @map("license_no")
+  labName      String    @map("lab_name")
+  address      String
+  testsOffered String[]  @default([]) @map("tests_offered")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("lab_profiles")
+}
+
+model PharmacyProfile {
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drugLicenseNo     String    @unique @map("drug_license_no")
+  tradeName         String    @map("trade_name")
+  address           String
+  deliveryAvailable Boolean   @default(false) @map("delivery_available")
+  deletedAt         DateTime? @map("deleted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("pharmacy_profiles")
 }
