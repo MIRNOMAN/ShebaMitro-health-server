@@ -1,35 +1,63 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import {
   appConfig,
   databaseConfig,
   jwtConfig,
+  redisConfig,
+  awsConfig,
   validateEnv,
 } from './config/index.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { HealthModule } from './modules/health/health.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor.js';
 
 @Module({
   imports: [
-    // ── Configuration ────────────────────────────────────────────
+    // ── Configuration with Zod Validation ───────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig],
       validate: validateEnv,
+      load: [appConfig, databaseConfig, jwtConfig, redisConfig, awsConfig],
     }),
 
-    // ── Database ─────────────────────────────────────────────────
+    // ── Database Module ──────────────────────────────────────────
     DatabaseModule,
 
     // ── Feature Modules ──────────────────────────────────────────
     AuthModule,
     UsersModule,
+    HealthModule,
   ],
   providers: [
-    // Global JWT guard — all routes are protected unless decorated with @Public()
+    // Global ValidationPipe: strict DTO filtering and implicit type transformation
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    },
+    // Global Centralized Exception Filter formatting errors to RFC 7807 Problem Details
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    // Global API Response Interceptor producing standard JSON envelope
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ApiResponseInterceptor,
+    },
+    // Global JWT Auth Guard (routes are protected by default unless marked @Public())
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

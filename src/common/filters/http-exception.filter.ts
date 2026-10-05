@@ -9,9 +9,21 @@ import {
 import { Request, Response } from 'express';
 
 /**
- * Global HTTP exception filter.
- * Catches all HttpExceptions and unhandled errors, normalising the response
- * format so clients always receive a consistent JSON envelope.
+ * Interface representing RFC 7807 Problem Details schema.
+ */
+export interface Rfc7807ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance: string;
+  timestamp: string;
+  invalidParams?: Array<{ field?: string; message: string }> | string[];
+}
+
+/**
+ * Centralized HTTP exception filter implementing RFC 7807 Problem Details standard.
+ * Formats all exceptions (4xx, 5xx, and unhandled errors) into standard RFC 7807 JSON envelope.
  */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -22,39 +34,86 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let title = 'Internal Server Error';
+    let detail = 'An unexpected internal server error occurred';
+    let invalidParams: Array<{ field?: string; message: string }> | string[] | undefined = undefined;
 
-    const exceptionResponse =
-      exception instanceof HttpException ? exception.getResponse() : null;
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
 
-    const message =
-      typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : (exceptionResponse as Record<string, unknown>)?.message ||
-          'Internal server error';
+      title = this.getHttpStatusTitle(status);
 
-    const errorResponse = {
-      success: false,
-      statusCode: status,
+      if (typeof exceptionResponse === 'string') {
+        detail = exceptionResponse;
+      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        const resObj = exceptionResponse as Record<string, any>;
+
+        if (Array.isArray(resObj.message)) {
+          detail = 'Request validation failed';
+          invalidParams = resObj.message;
+        } else if (typeof resObj.message === 'string') {
+          detail = resObj.message;
+        } else {
+          detail = exception.message;
+        }
+
+        if (resObj.error && typeof resObj.error === 'string') {
+          title = resObj.error;
+        }
+      } else {
+        detail = exception.message;
+      }
+    } else if (exception instanceof Error) {
+      detail = exception.message;
+    }
+
+    const problemDetails: Rfc7807ProblemDetails = {
+      type: `https://httpstatuses.com/${status}`,
+      title,
+      status,
+      detail,
+      instance: request.originalUrl || request.url,
       timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      message,
+      ...(invalidParams && { invalidParams }),
     };
 
-    // Log 5xx errors at error level, 4xx at warn level
     if (status >= 500) {
       this.logger.error(
-        `${request.method} ${request.url} ${status}`,
+        `${request.method} ${request.url} ${status} - ${detail}`,
         exception instanceof Error ? exception.stack : undefined,
       );
     } else {
-      this.logger.warn(`${request.method} ${request.url} ${status}`);
+      this.logger.warn(`${request.method} ${request.url} ${status} - ${detail}`);
     }
 
-    response.status(status).json(errorResponse);
+    response
+      .status(status)
+      .setHeader('Content-Type', 'application/problem+json')
+      .json(problemDetails);
+  }
+
+  private getHttpStatusTitle(status: number): string {
+    switch (status) {
+      case HttpStatus.BAD_REQUEST:
+        return 'Bad Request';
+      case HttpStatus.UNAUTHORIZED:
+        return 'Unauthorized';
+      case HttpStatus.FORBIDDEN:
+        return 'Forbidden';
+      case HttpStatus.NOT_FOUND:
+        return 'Not Found';
+      case HttpStatus.METHOD_NOT_ALLOWED:
+        return 'Method Not Allowed';
+      case HttpStatus.CONFLICT:
+        return 'Conflict';
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return 'Unprocessable Entity';
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return 'Too Many Requests';
+      default:
+        return 'HTTP Exception';
+    }
   }
 }

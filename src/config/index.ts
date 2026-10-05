@@ -1,5 +1,7 @@
 export { default as appConfig } from './app.config.js';
 export { default as databaseConfig } from './database.config.js';
 export { default as jwtConfig } from './jwt.config.js';
-export { validateEnv } from './env.validation.js';
+export { default as redisConfig } from './redis.config.js';
+export { default as awsConfig } from './aws.config.js';
+export { envSchema, validateEnv } from './env.validation.js';
 export type { EnvConfig } from './env.validation.js';
