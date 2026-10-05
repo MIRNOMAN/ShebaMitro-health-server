@@ -10,6 +10,71 @@ describe('Production Application (e2e)', () => {
   let app: INestApplication;
 
   const mockUsersDatabase: any[] = [];
+  const mockDoctorProfilesDatabase: any[] = [
+    {
+      id: 'doc-1',
+      userId: 'user-doc-1',
+      name: 'Dr. Rahat Ali',
+      specialization: 'Cardiology',
+      qualifications: ['MBBS', 'FCPS'],
+      experienceYears: 10,
+      consultFee: 1000,
+      followUpFee: 500,
+      isApproved: true,
+      bio: 'Expert Cardiologist in Dhaka',
+      hospital: 'Square Hospital',
+      gender: 'MALE',
+      rating: 4.8,
+      reviewCount: 45,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      user: { id: 'user-doc-1', email: 'rahat@example.com', phone: '+8801711111111', isVerified: true },
+      availabilities: [{ dayOfWeek: 'SUNDAY', startTime: '09:00', endTime: '17:00' }, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '17:00' }],
+    },
+    {
+      id: 'doc-2',
+      userId: 'user-doc-2',
+      name: 'Dr. Nusrat Jahan',
+      specialization: 'Neurology',
+      qualifications: ['MBBS', 'MD'],
+      experienceYears: 8,
+      consultFee: 1500,
+      followUpFee: 800,
+      isApproved: true,
+      bio: 'Experienced Neurologist at Labaid',
+      hospital: 'Labaid Specialized Hospital',
+      gender: 'FEMALE',
+      rating: 4.9,
+      reviewCount: 60,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      user: { id: 'user-doc-2', email: 'nusrat@example.com', phone: '+8801722222222', isVerified: true },
+      availabilities: [{ dayOfWeek: 'TUESDAY', startTime: '10:00', endTime: '16:00' }],
+    },
+    {
+      id: 'doc-3',
+      userId: 'user-doc-3',
+      name: 'Dr. Tanvir Hossain',
+      specialization: 'Cardiology',
+      qualifications: ['MBBS'],
+      experienceYears: 5,
+      consultFee: 600,
+      followUpFee: 300,
+      isApproved: true,
+      bio: 'Junior Cardiologist',
+      hospital: 'Popular Diagnostic Center',
+      gender: 'MALE',
+      rating: 4.2,
+      reviewCount: 15,
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      user: { id: 'user-doc-3', email: 'tanvir@example.com', phone: '+8801733333333', isVerified: true },
+      availabilities: [],
+    },
+  ];
 
   const mockPrismaService = {
     user: {
@@ -65,6 +130,106 @@ describe('Production Application (e2e)', () => {
         return null;
       }),
       deleteMany: jest.fn(async () => ({ count: 0 })),
+    },
+    doctorProfile: {
+      findMany: jest.fn(async ({ where, skip = 0, take = 10 }: any) => {
+        let results = mockDoctorProfilesDatabase.filter((d) => !d.deletedAt);
+
+        if (where?.OR && Array.isArray(where.OR)) {
+          results = results.filter((d) =>
+            where.OR.some((cond: any) => {
+              if (cond.name?.contains) {
+                return d.name?.toLowerCase().includes(cond.name.contains.toLowerCase());
+              }
+              if (cond.bio?.contains) {
+                return d.bio?.toLowerCase().includes(cond.bio.contains.toLowerCase());
+              }
+              if (cond.hospital?.contains) {
+                return d.hospital?.toLowerCase().includes(cond.hospital.contains.toLowerCase());
+              }
+              if (cond.specialization?.contains) {
+                return d.specialization?.toLowerCase().includes(cond.specialization.contains.toLowerCase());
+              }
+              return false;
+            }),
+          );
+        }
+
+        if (where?.consultFee) {
+          if (where.consultFee.gte !== undefined) {
+            results = results.filter((d) => d.consultFee >= where.consultFee.gte);
+          }
+          if (where.consultFee.lte !== undefined) {
+            results = results.filter((d) => d.consultFee <= where.consultFee.lte);
+          }
+        }
+
+        if (where?.rating?.gte !== undefined) {
+          results = results.filter((d) => d.rating >= where.rating.gte);
+        }
+
+        if (where?.gender?.equals) {
+          results = results.filter((d) => d.gender?.toLowerCase() === where.gender.equals.toLowerCase());
+        }
+
+        if (where?.availabilities?.some) {
+          const targetDay = where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
+          results = results.filter((d) =>
+            d.availabilities.some((a: any) => a.dayOfWeek.toLowerCase() === targetDay),
+          );
+        }
+
+        return results.slice(skip, skip + take);
+      }),
+      count: jest.fn(async ({ where }: any) => {
+        let results = mockDoctorProfilesDatabase.filter((d) => !d.deletedAt);
+
+        if (where?.OR && Array.isArray(where.OR)) {
+          results = results.filter((d) =>
+            where.OR.some((cond: any) => {
+              if (cond.name?.contains) {
+                return d.name?.toLowerCase().includes(cond.name.contains.toLowerCase());
+              }
+              if (cond.bio?.contains) {
+                return d.bio?.toLowerCase().includes(cond.bio.contains.toLowerCase());
+              }
+              if (cond.hospital?.contains) {
+                return d.hospital?.toLowerCase().includes(cond.hospital.contains.toLowerCase());
+              }
+              if (cond.specialization?.contains) {
+                return d.specialization?.toLowerCase().includes(cond.specialization.contains.toLowerCase());
+              }
+              return false;
+            }),
+          );
+        }
+
+        if (where?.consultFee) {
+          if (where.consultFee.gte !== undefined) {
+            results = results.filter((d) => d.consultFee >= where.consultFee.gte);
+          }
+          if (where.consultFee.lte !== undefined) {
+            results = results.filter((d) => d.consultFee <= where.consultFee.lte);
+          }
+        }
+
+        if (where?.rating?.gte !== undefined) {
+          results = results.filter((d) => d.rating >= where.rating.gte);
+        }
+
+        if (where?.gender?.equals) {
+          results = results.filter((d) => d.gender?.toLowerCase() === where.gender.equals.toLowerCase());
+        }
+
+        if (where?.availabilities?.some) {
+          const targetDay = where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
+          results = results.filter((d) =>
+            d.availabilities.some((a: any) => a.dayOfWeek.toLowerCase() === targetDay),
+          );
+        }
+
+        return results.length;
+      }),
     },
     $connect: jest.fn(async () => {}),
     $disconnect: jest.fn(async () => {}),
@@ -427,6 +592,69 @@ describe('Production Application (e2e)', () => {
       // OTP should be cleared from Redis after verification
       const clearedOtp = await redisService.get(`otp:${testPhone}`);
       expect(clearedOtp).toBeNull();
+    });
+  });
+
+  describe('DoctorModule (GET /api/v1/doctors Search & Multi-Faceted Filtering)', () => {
+    it('GET /doctors - should fetch all doctors with default offset pagination', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('items');
+      expect(response.body.data).toHaveProperty('totalCount', 3);
+      expect(response.body.data).toHaveProperty('totalPages', 1);
+      expect(response.body.data).toHaveProperty('currentPage', 1);
+      expect(response.body.data).toHaveProperty('hasNext', false);
+    });
+
+    it('GET /doctors?search=Rahat - should search by doctor name', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors?search=Rahat')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(1);
+      expect(response.body.data.items[0].name).toBe('Dr. Rahat Ali');
+    });
+
+    it('GET /doctors?specialty=Neurology - should filter by specialty', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors?specialty=Neurology')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(1);
+      expect(response.body.data.items[0].specialization).toBe('Neurology');
+    });
+
+    it('GET /doctors?minFee=500&maxFee=1200 - should filter by consult fee range', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors?minFee=500&maxFee=1200')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(2);
+    });
+
+    it('GET /doctors?ratingThreshold=4.8 - should filter by rating threshold', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors?ratingThreshold=4.8')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(2);
+    });
+
+    it('GET /doctors?gender=FEMALE - should filter by doctor gender', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/doctors?gender=FEMALE')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items.length).toBe(1);
+      expect(response.body.data.items[0].name).toBe('Dr. Nusrat Jahan');
     });
   });
 });

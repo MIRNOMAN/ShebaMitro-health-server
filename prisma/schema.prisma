@@ -75,6 +75,7 @@ enum PharmacyOrderStatus {
 
 model User {
   id                  String           @id @default(uuid())
+  name                String?
   email               String           @unique
   phone               String?          @unique
   passwordHash        String           @map("password_hash")
@@ -124,6 +125,7 @@ model DoctorProfile {
   userId          String               @unique @map("user_id")
   user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   bmdcRegNo       String               @unique @map("bmdc_reg_no")
+  name            String?
   specialization  String
   qualifications  String[]             @default([])
   experienceYears Int                  @default(0) @map("experience_years")
@@ -131,6 +133,8 @@ model DoctorProfile {
   followUpFee     Float                @default(0) @map("follow_up_fee")
   isApproved      Boolean              @default(false) @map("is_approved")
   bio             String?
+  hospital        String?
+  gender          String?
   rating          Float                @default(0.0)
   reviewCount     Int                  @default(0) @map("review_count")
   deletedAt       DateTime?            @map("deleted_at")
@@ -141,6 +145,9 @@ model DoctorProfile {
   appointments    Appointment[]
   prescriptions   Prescription[]
 
+  @@index([specialization])
+  @@index([consultFee])
+  @@index([rating])
   @@map("doctor_profiles")
 }
 
