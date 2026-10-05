@@ -16,12 +16,11 @@ import { UsersModule } from '../users/users.module.js';
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') ?? '7d';
 
         return {
           secret,
           signOptions: {
-            expiresIn: expiresIn as unknown as number,
+            expiresIn: '15m',
           },
         };
       },

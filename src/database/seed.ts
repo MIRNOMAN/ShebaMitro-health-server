@@ -1,12 +1,12 @@
 import { PrismaClient, Role, AppointmentType, AppointmentStatus, PaymentStatus, MealTiming } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seed with 10 dummy providers across all roles...');
 
-  const passwordHash = await bcrypt.hash('Password123!', 10);
+  const passwordHash = await argon2.hash('Password123!');
 
   // Clear existing records safely in order of dependency
   await prisma.medicineReminder.deleteMany();
@@ -291,7 +291,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Seeding completed successfully!');
+  console.log('✅ Seeding completed successfully with Argon2 hashes!');
 }
 
 main()
