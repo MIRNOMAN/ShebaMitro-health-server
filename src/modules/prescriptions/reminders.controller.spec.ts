@@ -26,9 +26,36 @@ describe('RemindersController', () => {
     },
   };
 
+  const mockSnoozeResponse = {
+    reminder: {
+      id: 'rem-123',
+      patientId: 'patient-456',
+      intakeTime: new Date(Date.now() + 15 * 60 * 1000),
+      status: ReminderStatus.PENDING,
+    },
+    snoozedByMinutes: 15,
+    message: 'Alarm snoozed successfully by 15 minutes.',
+  };
+
+  const mockComplianceResponse = {
+    patientId: 'patient-456',
+    patientName: 'Abdul',
+    adherencePercentage: 65,
+    dosesTakenOnTime: 13,
+    totalPrescribedDoses: 20,
+    skippedDoses: 5,
+    pendingDoses: 2,
+    adherenceAlertTriggered: true,
+    alertThreshold: 70,
+    pushNotificationSent: true,
+    flaggedUpcomingAppointmentsCount: 1,
+  };
+
   beforeEach(async () => {
     dosageParserService = {
       acknowledgeReminder: jest.fn().mockResolvedValue(mockAckResponse),
+      snoozeReminder: jest.fn().mockResolvedValue(mockSnoozeResponse),
+      getPatientCompliance: jest.fn().mockResolvedValue(mockComplianceResponse),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -62,30 +89,54 @@ describe('RemindersController', () => {
       expect(result.reminder.status).toBe(ReminderStatus.TAKEN);
       expect(result.complianceRate).toBe(100);
     });
+  });
 
-    it('should record SKIPPED status when requested', async () => {
-      dosageParserService.acknowledgeReminder.mockResolvedValueOnce({
-        ...mockAckResponse,
-        reminder: {
-          ...mockAckResponse.reminder,
-          status: ReminderStatus.SKIPPED,
-        },
-        complianceRate: 50,
+  describe('snoozeReminder', () => {
+    it('should delay alarm by 15 mins by default', async () => {
+      const result = await controller.snoozeReminder(
+        'user-patient-1',
+        'rem-123',
+        {},
+      );
+
+      expect(dosageParserService.snoozeReminder).toHaveBeenCalledWith(
+        'user-patient-1',
+        'rem-123',
+        15,
+      );
+      expect(result.snoozedByMinutes).toBe(15);
+    });
+
+    it('should delay alarm by 30 mins when specified', async () => {
+      dosageParserService.snoozeReminder.mockResolvedValueOnce({
+        ...mockSnoozeResponse,
+        snoozedByMinutes: 30,
       });
 
-      const result = await controller.acknowledgeReminder(
+      const result = await controller.snoozeReminder(
         'user-patient-1',
         'rem-123',
-        { status: ReminderStatus.SKIPPED },
+        { minutes: 30 },
       );
 
-      expect(dosageParserService.acknowledgeReminder).toHaveBeenCalledWith(
+      expect(dosageParserService.snoozeReminder).toHaveBeenCalledWith(
         'user-patient-1',
         'rem-123',
-        ReminderStatus.SKIPPED,
+        30,
       );
+      expect(result.snoozedByMinutes).toBe(30);
+    });
+  });
 
-      expect(result.reminder.status).toBe(ReminderStatus.SKIPPED);
+  describe('getPatientCompliance', () => {
+    it('should calculate adherence percentage and return report', async () => {
+      const result = await controller.getPatientCompliance('patient-456');
+
+      expect(dosageParserService.getPatientCompliance).toHaveBeenCalledWith(
+        'patient-456',
+      );
+      expect(result.adherencePercentage).toBe(65);
+      expect(result.adherenceAlertTriggered).toBe(true);
     });
   });
 });

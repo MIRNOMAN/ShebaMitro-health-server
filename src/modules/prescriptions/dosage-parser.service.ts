@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { ReminderStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RemindersQueueService } from './reminders-queue.service.js';
+import { WebPushService } from './web-push.service.js';
 
 export interface ParseAndScheduleInput {
   patientId: string;
@@ -25,6 +26,7 @@ export class DosageParserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly remindersQueueService: RemindersQueueService,
+    private readonly webPushService: WebPushService,
   ) {}
 
   /**
@@ -220,6 +222,177 @@ export class DosageParserService {
         pendingCount,
         complianceRatePercentage: complianceRate,
       },
+    };
+  }
+
+  /**
+   * Snooze medicine reminder alarm by 15 or 30 minutes in BullMQ and DB
+   */
+  async snoozeReminder(
+    userId: string,
+    reminderId: string,
+    snoozeMinutes: number = 15,
+  ) {
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+    }
+
+    const reminder = await this.prisma.medicineReminder.findUnique({
+      where: { id: reminderId },
+      include: { prescriptionItem: true },
+    });
+
+    if (!reminder) {
+      throw new NotFoundException(`Medicine reminder with ID ${reminderId} not found`);
+    }
+
+    if (reminder.patientId !== patientProfile.id) {
+      throw new ForbiddenException(
+        'Access denied. You do not have permission to snooze this reminder.',
+      );
+    }
+
+    const newIntakeTime = new Date(Date.now() + snoozeMinutes * 60 * 1000);
+
+    // Update intake time in DB
+    const updatedReminder = await this.prisma.medicineReminder.update({
+      where: { id: reminderId },
+      data: {
+        intakeTime: newIntakeTime,
+        status: ReminderStatus.PENDING,
+      },
+    });
+
+    // Reschedule delayed BullMQ job
+    await this.remindersQueueService.snoozeReminderJob(
+      {
+        reminderId: reminder.id,
+        patientId: reminder.patientId,
+        prescriptionItemId: reminder.prescriptionItemId,
+        intakeTime: newIntakeTime,
+      },
+      snoozeMinutes,
+    );
+
+    this.logger.log(
+      `Patient ${patientProfile.id} snoozed reminder ${reminderId} by ${snoozeMinutes} mins to ${newIntakeTime.toISOString()}`,
+    );
+
+    return {
+      reminder: updatedReminder,
+      snoozedByMinutes: snoozeMinutes,
+      newIntakeTime,
+      message: `Alarm snoozed successfully by ${snoozeMinutes} minutes.`,
+    };
+  }
+
+  /**
+   * GET /api/v1/reminders/compliance/:patientId
+   * Calculate adherence percentage (Doses Taken on Time / Total Prescribed Doses).
+   * If adherence falls below 70%, trigger automated push reminder to patient
+   * and flag an adherence alert on doctor's upcoming follow-up appointment view.
+   */
+  async getPatientCompliance(patientId: string) {
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { id: patientId },
+      include: {
+        user: { select: { name: true, email: true, phone: true } },
+      },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException(`Patient profile with ID ${patientId} not found`);
+    }
+
+    const allReminders = await this.prisma.medicineReminder.findMany({
+      where: { patientId },
+      include: { prescriptionItem: true },
+    });
+
+    const totalPrescribedDoses = allReminders.length;
+    const dosesTakenOnTime = allReminders.filter(
+      (r) => r.status === ReminderStatus.TAKEN,
+    ).length;
+    const skippedDoses = allReminders.filter(
+      (r) => r.status === ReminderStatus.SKIPPED,
+    ).length;
+    const pendingDoses = allReminders.filter(
+      (r) => r.status === ReminderStatus.PENDING,
+    ).length;
+
+    const adherencePercentage =
+      totalPrescribedDoses > 0
+        ? Number(((dosesTakenOnTime / totalPrescribedDoses) * 100).toFixed(1))
+        : 100;
+
+    let adherenceAlertTriggered = false;
+    let pushNotificationSent = false;
+    let flaggedAppointmentsCount = 0;
+
+    // If adherence falls below 70%
+    if (adherencePercentage < 70) {
+      adherenceAlertTriggered = true;
+
+      // 1) Trigger automated push reminder to patient
+      try {
+        await this.webPushService.sendAlarmNotification(patientId, {
+          reminderId: `compliance-alert-${Date.now()}`,
+          patientId,
+          medicineName: 'Low Medication Adherence Warning',
+          schedulePattern: `Current Adherence: ${adherencePercentage}% (<70%)`,
+          intakeTime: new Date(),
+        });
+        pushNotificationSent = true;
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch low adherence push notification: ${err.message}`);
+      }
+
+      // 2) Flag adherence alert on doctor's upcoming follow-up appointment view
+      const upcomingAppointments = await this.prisma.appointment.findMany({
+        where: {
+          patientId,
+          slotStartTime: { gte: new Date() },
+          status: { in: ['CONFIRMED', 'PENDING', 'IN_PROGRESS'] as any },
+        },
+      });
+
+      const alertTag = `[ADHERENCE ALERT: Patient medication adherence is ${adherencePercentage}% (<70%)]`;
+
+      for (const appt of upcomingAppointments) {
+        const updatedNotes = appt.notes
+          ? `${appt.notes}\n${alertTag}`
+          : alertTag;
+
+        if (!appt.notes?.includes('ADHERENCE ALERT')) {
+          await this.prisma.appointment.update({
+            where: { id: appt.id },
+            data: { notes: updatedNotes },
+          });
+          flaggedAppointmentsCount++;
+        }
+      }
+
+      this.logger.warn(
+        `Low adherence alert (<70%) triggered for patient ${patientId}: Adherence is ${adherencePercentage}%. Push sent: ${pushNotificationSent}. Flagged ${flaggedAppointmentsCount} upcoming appointments.`,
+      );
+    }
+
+    return {
+      patientId,
+      patientName: patientProfile.user?.name || 'Patient',
+      adherencePercentage,
+      dosesTakenOnTime,
+      totalPrescribedDoses,
+      skippedDoses,
+      pendingDoses,
+      adherenceAlertTriggered,
+      alertThreshold: 70,
+      pushNotificationSent,
+      flaggedUpcomingAppointmentsCount: flaggedAppointmentsCount,
     };
   }
 }

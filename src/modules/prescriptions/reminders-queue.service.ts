@@ -78,6 +78,41 @@ export class RemindersQueueService {
 
     return job;
   }
+
+  /**
+   * Reschedule / Snooze an existing BullMQ alarm job by delayMinutes (15 or 30 mins)
+   */
+  async snoozeReminderJob(
+    payload: ReminderJobPayload,
+    delayMinutes: number = 15,
+  ): Promise<Job> {
+    const jobId = `reminder-${payload.reminderId}`;
+    const delayMs = delayMinutes * 60 * 1000;
+
+    try {
+      const existingJob = await this.remindersQueue.getJob(jobId);
+      if (existingJob) {
+        await existingJob.remove();
+      }
+    } catch (err: any) {
+      this.logger.warn(
+        `Could not remove existing job ${jobId} before snoozing: ${err.message}`,
+      );
+    }
+
+    const job = await this.remindersQueue.add('send-reminder', payload, {
+      jobId,
+      delay: delayMs,
+      removeOnComplete: true,
+      attempts: 3,
+    });
+
+    this.logger.log(
+      `Snoozed BullMQ job ${jobId} for reminder ${payload.reminderId} by ${delayMinutes} mins (${delayMs}ms)`,
+    );
+
+    return job;
+  }
 }
 
 @Processor(MEDICINE_REMINDERS_QUEUE)
