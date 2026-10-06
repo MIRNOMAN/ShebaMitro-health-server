@@ -23,6 +23,7 @@ import { ConfigService } from '@nestjs/config';
 import { TeleconsultModule } from './modules/teleconsult/teleconsult.module.js';
 import { PrescriptionModule } from './modules/prescriptions/prescriptions.module.js';
 import { LabModule } from './modules/labs/labs.module.js';
+import { PharmacyModule } from './modules/pharmacy/pharmacy.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -67,6 +68,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     TeleconsultModule,
     PrescriptionModule,
     LabModule,
+    PharmacyModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation

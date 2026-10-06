@@ -67,6 +67,7 @@ enum PharmacyOrderStatus {
   PROCESSING
   OUT_FOR_DELIVERY
   DELIVERED
+  DISPENSED
   CANCELLED
 }
 
@@ -264,9 +265,12 @@ model Prescription {
   followUpDate    DateTime?          @map("follow_up_date")
   overrideReason  String?            @map("override_reason")
   overrideJson    Json?              @map("override_json")
-  qrCodeHash      String?            @map("qr_code_hash")
-  pdfUrl          String?            @map("pdf_url")
-  deletedAt       DateTime?          @map("deleted_at")
+  qrCodeHash            String?            @map("qr_code_hash")
+  pdfUrl                String?            @map("pdf_url")
+  isDispensed           Boolean            @default(false) @map("is_dispensed")
+  dispensedAt           DateTime?          @map("dispensed_at")
+  dispensedByPharmacyId String?            @map("dispensed_by_pharmacy_id")
+  deletedAt             DateTime?          @map("deleted_at")
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
