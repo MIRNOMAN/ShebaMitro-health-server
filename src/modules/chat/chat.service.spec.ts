@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WsException } from '@nestjs/websockets';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ChatService } from './chat.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { PaginationService } from '../../common/pagination/pagination.service.js';
 
 describe('ChatService', () => {
   let service: ChatService;
   let prismaService: any;
+  let paginationService: any;
 
   const mockAppointment = {
     id: 'appt-123',
@@ -41,14 +43,28 @@ describe('ChatService', () => {
         create: jest.fn().mockResolvedValue(mockMessage),
         findUnique: jest.fn().mockResolvedValue(mockMessage),
         update: jest.fn().mockResolvedValue({ ...mockMessage, isRead: true }),
+        updateMany: jest.fn().mockResolvedValue({ count: 3 }),
         findMany: jest.fn().mockResolvedValue([mockMessage]),
       },
+    };
+
+    paginationService = {
+      paginate: jest.fn().mockResolvedValue({
+        data: [mockMessage],
+        pageInfo: {
+          startCursor: 'cursor-start',
+          endCursor: 'cursor-end',
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatService,
         { provide: PrismaService, useValue: prismaService },
+        { provide: PaginationService, useValue: paginationService },
       ],
     }).compile();
 
@@ -68,41 +84,58 @@ describe('ChatService', () => {
       expect(access.isAssignedDoctor).toBe(false);
     });
 
-    it('should throw WsException if user is neither assigned doctor nor assigned patient', async () => {
+    it('should throw ForbiddenException if user is neither assigned doctor nor patient', async () => {
       await expect(
         service.validateAppointmentAccess('unauthorized-user-999', 'appt-123'),
-      ).rejects.toThrow(WsException);
+      ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw WsException if appointment does not exist', async () => {
+    it('should throw NotFoundException if appointment does not exist', async () => {
       prismaService.appointment.findUnique.mockResolvedValueOnce(null);
 
       await expect(
         service.validateAppointmentAccess('user-doctor-1', 'invalid-appt-id'),
-      ).rejects.toThrow(WsException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('saveMessage', () => {
-    it('should store conversation message in Message table', async () => {
-      const result = await service.saveMessage(
+  describe('getPaginatedMessages', () => {
+    it('should validate access and call cursor pagination engine', async () => {
+      const cursorDto = { limit: 10, direction: 'forward' as any };
+
+      const result = await service.getPaginatedMessages(
         'user-patient-1',
         'appt-123',
-        'Hello Doctor',
+        cursorDto,
       );
 
-      expect(prismaService.message.create).toHaveBeenCalledWith({
-        data: {
+      expect(paginationService.paginate).toHaveBeenCalledWith(
+        prismaService.message,
+        expect.objectContaining({
+          where: { appointmentId: 'appt-123' },
+          orderByField: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      );
+
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('markRoomReadReceipts', () => {
+    it('should mark all messages from other user as read', async () => {
+      const result = await service.markRoomReadReceipts('user-patient-1', 'appt-123');
+
+      expect(prismaService.message.updateMany).toHaveBeenCalledWith({
+        where: {
           appointmentId: 'appt-123',
-          senderId: 'user-patient-1',
-          content: 'Hello Doctor',
-          fileUrl: null,
+          senderId: { not: 'user-patient-1' },
           isRead: false,
         },
-        include: expect.any(Object),
+        data: { isRead: true },
       });
 
-      expect(result.id).toBe('msg-1');
+      expect(result.count).toBe(3);
     });
   });
 });

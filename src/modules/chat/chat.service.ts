@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { PrismaService } from '../../database/prisma.service.js';
+import { PaginationService } from '../../common/pagination/pagination.service.js';
+import { CursorPaginationDto } from '../../common/pagination/dto/cursor-pagination.dto.js';
 
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paginationService: PaginationService,
+  ) {}
 
   /**
    * Ensure only the assigned doctor and patient can subscribe or publish to the room.
@@ -21,7 +26,7 @@ export class ChatService {
     });
 
     if (!appointment) {
-      throw new WsException(`Appointment with ID ${appointmentId} not found`);
+      throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
     }
 
     const isAssignedDoctor = appointment.doctor.userId === userId;
@@ -31,8 +36,8 @@ export class ChatService {
       this.logger.warn(
         `Unauthorized room access attempt by user ${userId} for appointment ${appointmentId}`,
       );
-      throw new WsException(
-        'Access denied. Only the assigned doctor and patient can subscribe or publish to this appointment room.',
+      throw new ForbiddenException(
+        'Access denied. Only the assigned doctor and patient can subscribe, publish, or read messages in this room.',
       );
     }
 
@@ -41,6 +46,35 @@ export class ChatService {
       isAssignedDoctor,
       isAssignedPatient,
     };
+  }
+
+  /**
+   * GET /api/v1/chat/:appointmentId/messages utilizing the composite cursor pagination engine.
+   */
+  async getPaginatedMessages(
+    userId: string,
+    appointmentId: string,
+    cursorDto: CursorPaginationDto,
+  ) {
+    // Access control check
+    await this.validateAppointmentAccess(userId, appointmentId);
+
+    return this.paginationService.paginate(this.prisma.message, {
+      where: { appointmentId },
+      cursorDto,
+      orderByField: 'createdAt',
+      sortOrder: 'desc',
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
   }
 
   /**
@@ -80,12 +114,36 @@ export class ChatService {
   }
 
   /**
-   * Mark message as delivered / read in database
+   * Mark messages as read with PUT /api/v1/chat/:appointmentId/read-receipts
    */
-  async markMessageDelivered(
-    messageId: string,
-    appointmentId: string,
-  ) {
+  async markRoomReadReceipts(userId: string, appointmentId: string) {
+    // Access control check
+    await this.validateAppointmentAccess(userId, appointmentId);
+
+    const result = await this.prisma.message.updateMany({
+      where: {
+        appointmentId,
+        senderId: { not: userId },
+        isRead: false,
+      },
+      data: { isRead: true },
+    });
+
+    this.logger.log(
+      `Marked ${result.count} unread messages as read for appointment ${appointmentId} by user ${userId}`,
+    );
+
+    return {
+      count: result.count,
+      appointmentId,
+      readByUserId: userId,
+    };
+  }
+
+  /**
+   * Mark single message as delivered / read in database
+   */
+  async markMessageDelivered(messageId: string, appointmentId: string) {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
     });

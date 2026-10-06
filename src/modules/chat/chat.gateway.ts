@@ -272,4 +272,37 @@ export class ChatGateway
       userId,
     });
   }
+
+  /**
+   * Broadcast file attachment / message over room:appointment:{id}
+   */
+  broadcastNewMessage(appointmentId: string, message: any) {
+    const roomName = this.getRoomName(appointmentId);
+    this.logger.log(`Broadcasting file metadata message over WebSocket room: ${roomName}`);
+    if (this.server) {
+      this.server.to(roomName).emit('send-message', message);
+      this.server.to(roomName).emit('new-message', message);
+    }
+  }
+
+  /**
+   * Broadcast read-receipts over room:appointment:{id}
+   */
+  broadcastReadReceipts(appointmentId: string, readByUserId: string, count: number) {
+    const roomName = this.getRoomName(appointmentId);
+    this.logger.log(
+      `Broadcasting read-receipts over WebSocket room: ${roomName} (count: ${count})`,
+    );
+    if (this.server) {
+      const payload = {
+        appointmentId,
+        readByUserId,
+        readCount: count,
+        isRead: true,
+        readAt: new Date().toISOString(),
+      };
+      this.server.to(roomName).emit('message-delivered', payload);
+      this.server.to(roomName).emit('read-receipts', payload);
+    }
+  }
 }
