@@ -146,6 +146,7 @@ model DoctorProfile {
   userId          String               @unique @map("user_id")
   user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   bmdcRegNo       String               @unique @map("bmdc_reg_no")
+  bmdcDocUrl      String?              @map("bmdc_doc_url")
   name            String?
   specialization  String
   qualifications  String[]             @default([])
@@ -436,5 +437,38 @@ model Wallet {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("wallets")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminUserId String?  @map("admin_user_id")
+  action      String
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id")
+  detailsJson Json?    @map("details_json")
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([adminUserId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model Payout {
+  id             String   @id @default(uuid())
+  providerId     String   @map("provider_id")
+  providerType   String   @map("provider_type")
+  amount         Float
+  paymentMethod  String   @map("payment_method")
+  accountDetails Json     @map("account_details")
+  status         String   @default("DISBURSED")
+  disbursedAt    DateTime @default(now()) @map("disbursed_at")
+  transactionRef String?  @map("transaction_ref")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([providerId])
+  @@index([status])
+  @@map("payouts")
 }
 

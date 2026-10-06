@@ -26,6 +26,7 @@ import { LabModule } from './modules/labs/labs.module.js';
 import { PharmacyModule } from './modules/pharmacy/pharmacy.module.js';
 import { PaymentModule } from './modules/payments/payments.module.js';
 import { EhrModule } from './modules/ehr/ehr.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -73,6 +74,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     PharmacyModule,
     PaymentModule,
     EhrModule,
+    AdminModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation
