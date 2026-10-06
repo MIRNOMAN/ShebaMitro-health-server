@@ -380,8 +380,8 @@ describe('Production Application (e2e)', () => {
 
       const cookies = response.get('Set-Cookie');
       expect(cookies).toBeDefined();
-      const hasAccessTokenCookie = cookies.some((c: string) => c.includes('access_token='));
-      const hasRefreshTokenCookie = cookies.some((c: string) => c.includes('refresh_token='));
+      const hasAccessTokenCookie = cookies?.some((c: string) => c.includes('access_token='));
+      const hasRefreshTokenCookie = cookies?.some((c: string) => c.includes('refresh_token='));
       expect(hasAccessTokenCookie).toBe(true);
       expect(hasRefreshTokenCookie).toBe(true);
 

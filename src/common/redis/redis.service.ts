@@ -51,6 +51,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  getRawClient(): Redis | null {
+    if (this.isMemoryFallback || !this.redisClient) {
+      return null;
+    }
+    return this.redisClient;
+  }
+
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (this.isMemoryFallback) {
       const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : Infinity;

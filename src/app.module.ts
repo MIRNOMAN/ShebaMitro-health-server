@@ -15,6 +15,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { OtpModule } from './modules/otp/otp.module.js';
 import { DoctorModule } from './modules/doctors/doctors.module.js';
+import { AppointmentsModule } from './modules/appointments/appointments.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -39,6 +40,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     HealthModule,
     OtpModule,
     DoctorModule,
+    AppointmentsModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation
