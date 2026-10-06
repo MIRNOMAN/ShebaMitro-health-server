@@ -6,12 +6,14 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { AppointmentStatus, MealTiming } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
+import { S3Service } from '../../common/storage/s3.service.js';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto.js';
 import { VerifyDrugSafetyDto } from './dto/verify-drug-safety.dto.js';
 import { DrugSafetyService, DrugSafetyResult } from './drug-safety.service.js';
+import { PdfRendererService } from './pdf-renderer.service.js';
 import { PrescriptionFinalizedEvent } from './events/prescription-finalized.event.js';
 
 @Injectable()
@@ -22,12 +24,75 @@ export class PrescriptionsService {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly drugSafetyService: DrugSafetyService,
+    private readonly pdfRendererService: PdfRendererService,
+    private readonly s3Service: S3Service,
   ) {}
+
+  /**
+   * Event listener: Fires automatically on PrescriptionFinalizedEvent
+   * Renders institutional medical PDF, generates cryptographically signed QR code, uploads to S3, and stores presigned URL & hash.
+   */
+  @OnEvent('prescription.finalized')
+  async handlePrescriptionFinalized(event: PrescriptionFinalizedEvent) {
+    this.logger.log(`Handling PrescriptionFinalizedEvent for prescription ID ${event.prescriptionId}`);
+    try {
+      await this.generateAndStorePdf(event.prescriptionId, event.prescription);
+    } catch (err: any) {
+      this.logger.error(`Failed to handle PDF rendering on PrescriptionFinalizedEvent: ${err.message}`);
+    }
+  }
+
+  /**
+   * Render PDF, upload to S3, and update prescription record with hash & presigned URL
+   */
+  async generateAndStorePdf(prescriptionId: string, prescriptionData?: any) {
+    let prescription = prescriptionData;
+    if (!prescription) {
+      prescription = await this.prisma.prescription.findUnique({
+        where: { id: prescriptionId },
+        include: {
+          items: true,
+          doctor: { select: { id: true, name: true, specialization: true, bmdcRegNo: true, hospital: true } },
+          patient: { select: { id: true, gender: true, bloodGroup: true, user: { select: { name: true, email: true } } } },
+        },
+      });
+    }
+
+    if (!prescription) {
+      throw new NotFoundException(`Prescription ${prescriptionId} not found`);
+    }
+
+    // 1. Render PDF layout using PDFKit and generate cryptographic QR code
+    const rendered = await this.pdfRendererService.renderPrescriptionPdf(prescription);
+
+    // 2. Upload rendered PDF buffer to private S3 bucket
+    const key = `prescriptions/pdf/${prescriptionId}.pdf`;
+    const uploadResult = await this.s3Service.uploadBuffer(rendered.pdfBuffer, key, 'application/pdf');
+
+    // 3. Store qrCodeHash and pdfUrl in PostgreSQL
+    const updated = await this.prisma.prescription.update({
+      where: { id: prescriptionId },
+      data: {
+        qrCodeHash: rendered.sha256Hash,
+        pdfUrl: uploadResult.presignedUrl,
+      },
+    });
+
+    this.logger.log(
+      `Successfully generated & uploaded PDF for prescription ${prescriptionId}. Hash: ${rendered.sha256Hash}`,
+    );
+
+    return {
+      prescriptionId,
+      sha256Hash: rendered.sha256Hash,
+      verifyUrl: rendered.verifyUrl,
+      pdfUrl: uploadResult.presignedUrl,
+    };
+  }
 
   /**
    * POST /prescriptions/verify-safety
    * Cross-reference prescribed medications against known drug interaction database tables and patient allergy list.
-   * Return severity levels: SAFE, MODERATE, SEVERE.
    */
   async verifyDrugSafety(dto: VerifyDrugSafetyDto): Promise<DrugSafetyResult> {
     return this.drugSafetyService.verifySafety(dto);
@@ -152,12 +217,14 @@ export class PrescriptionsService {
         include: {
           items: true,
           doctor: {
-            select: { id: true, name: true, specialization: true },
+            select: { id: true, name: true, specialization: true, bmdcRegNo: true, hospital: true },
           },
           patient: {
             select: {
               id: true,
               userId: true,
+              gender: true,
+              bloodGroup: true,
               user: { select: { name: true, email: true, phone: true } },
             },
           },
@@ -173,14 +240,24 @@ export class PrescriptionsService {
       return createdPrescription;
     });
 
-    // 8. Fire PrescriptionFinalizedEvent
+    // 8. Render PDF synchronously or asynchronously and get presigned URL & hash
+    const pdfMeta = await this.generateAndStorePdf(prescription.id, prescription);
+
+    const updatedPrescription = {
+      ...prescription,
+      qrCodeHash: pdfMeta.sha256Hash,
+      pdfUrl: pdfMeta.pdfUrl,
+      verifyUrl: pdfMeta.verifyUrl,
+    };
+
+    // 9. Fire PrescriptionFinalizedEvent
     const finalizedEvent = new PrescriptionFinalizedEvent(
       prescription.id,
       prescription.appointmentId,
       prescription.doctorId,
       prescription.patientId,
       prescription.createdAt,
-      prescription,
+      updatedPrescription,
     );
 
     this.eventEmitter.emit('prescription.finalized', finalizedEvent);
@@ -188,7 +265,7 @@ export class PrescriptionsService {
       `Prescription ${prescription.id} finalized and PrescriptionFinalizedEvent emitted for appointment ${dto.appointmentId}`,
     );
 
-    return prescription;
+    return updatedPrescription;
   }
 
   /**
@@ -199,7 +276,7 @@ export class PrescriptionsService {
       where: { id },
       include: {
         items: true,
-        doctor: { select: { id: true, name: true, specialization: true } },
+        doctor: { select: { id: true, name: true, specialization: true, bmdcRegNo: true } },
         patient: { select: { id: true, userId: true, user: { select: { name: true, email: true } } } },
       },
     });

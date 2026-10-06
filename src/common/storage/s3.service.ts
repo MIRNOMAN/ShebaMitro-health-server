@@ -93,4 +93,51 @@ export class S3Service {
       presignedUrl: presignedUrl || publicUrl,
     };
   }
+
+  /**
+   * Upload Buffer (e.g. rendered PDF) to private S3 bucket and return presigned URL
+   */
+  async uploadBuffer(
+    buffer: Buffer,
+    key: string,
+    contentType: string = 'application/pdf',
+  ): Promise<UploadedFileResult> {
+    let presignedUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+
+    if (this.s3Client) {
+      try {
+        const putCommand = new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: buffer,
+          ContentType: contentType,
+        });
+
+        await this.s3Client.send(putCommand);
+
+        const getCommand = new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        });
+
+        presignedUrl = await getSignedUrl(this.s3Client, getCommand, { expiresIn: 604800 });
+        this.logger.log(`Uploaded buffer to S3 key: ${key}`);
+      } catch (err: any) {
+        this.logger.error(`S3 uploadBuffer error for key ${key}: ${err.message}`);
+      }
+    } else {
+      this.logger.log(`Mock S3 uploadBuffer executed for key: ${key}`);
+    }
+
+    const publicUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+
+    return {
+      key,
+      originalName: key.split('/').pop() || 'document.pdf',
+      mimeType: contentType,
+      size: buffer.length,
+      fileUrl: presignedUrl || publicUrl,
+      presignedUrl: presignedUrl || publicUrl,
+    };
+  }
 }

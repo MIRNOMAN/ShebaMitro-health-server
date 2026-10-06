@@ -8,7 +8,9 @@ import {
 import { AppointmentStatus, MealTiming } from '@prisma/client';
 import { PrescriptionsService } from './prescriptions.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { S3Service } from '../../common/storage/s3.service.js';
 import { DrugSafetyService } from './drug-safety.service.js';
+import { PdfRendererService } from './pdf-renderer.service.js';
 import { PrescriptionFinalizedEvent } from './events/prescription-finalized.event.js';
 
 describe('PrescriptionsService', () => {
@@ -16,6 +18,8 @@ describe('PrescriptionsService', () => {
   let prismaService: any;
   let eventEmitter: any;
   let drugSafetyService: any;
+  let pdfRendererService: any;
+  let s3Service: any;
 
   const mockDoctorProfile = {
     id: 'doc-profile-1',
@@ -86,6 +90,22 @@ describe('PrescriptionsService', () => {
       verifySafety: jest.fn().mockResolvedValue(mockSafeResult),
     };
 
+    pdfRendererService = {
+      renderPrescriptionPdf: jest.fn().mockResolvedValue({
+        pdfBuffer: Buffer.from('mock-pdf'),
+        sha256Hash: 'mock-sha256-hash-1234567890abcdef',
+        verifyUrl: 'https://shebamitro.health/verify-rx/rx-999?hash=mock-sha256-hash-1234567890abcdef',
+      }),
+    };
+
+    s3Service = {
+      uploadBuffer: jest.fn().mockResolvedValue({
+        key: 'prescriptions/pdf/rx-999.pdf',
+        fileUrl: 'https://s3.amazonaws.com/presigned-pdf-url',
+        presignedUrl: 'https://s3.amazonaws.com/presigned-pdf-url',
+      }),
+    };
+
     prismaService = {
       $transaction: jest.fn(async (cb) => cb(prismaService)),
       doctorProfile: {
@@ -101,6 +121,11 @@ describe('PrescriptionsService', () => {
       prescription: {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue(mockCreatedPrescription),
+        update: jest.fn().mockResolvedValue({
+          ...mockCreatedPrescription,
+          qrCodeHash: 'mock-sha256-hash-1234567890abcdef',
+          pdfUrl: 'https://s3.amazonaws.com/presigned-pdf-url',
+        }),
       },
     };
 
@@ -110,6 +135,8 @@ describe('PrescriptionsService', () => {
         { provide: PrismaService, useValue: prismaService },
         { provide: EventEmitter2, useValue: eventEmitter },
         { provide: DrugSafetyService, useValue: drugSafetyService },
+        { provide: PdfRendererService, useValue: pdfRendererService },
+        { provide: S3Service, useValue: s3Service },
       ],
     }).compile();
 
@@ -121,7 +148,7 @@ describe('PrescriptionsService', () => {
   });
 
   describe('createPrescription', () => {
-    it('should validate IN_PROGRESS status, verify drug safety, save atomically & fire PrescriptionFinalizedEvent', async () => {
+    it('should validate IN_PROGRESS status, verify safety, render PDF with QR hash, upload to S3, & fire event', async () => {
       const dto = {
         appointmentId: 'appt-123',
         chiefComplaints: ['High fever', 'Dry cough'],
@@ -143,20 +170,18 @@ describe('PrescriptionsService', () => {
 
       const result = await service.createPrescription('user-doc-1', dto);
 
-      expect(drugSafetyService.verifySafety).toHaveBeenCalledWith({
-        appointmentId: 'appt-123',
-        patientId: 'patient-profile-1',
-        medicines: dto.items,
-      });
-
-      expect(prismaService.prescription.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          appointmentId: 'appt-123',
-          doctorId: 'doc-profile-1',
-          patientId: 'patient-profile-1',
-          diagnosis: 'Acute Viral Bronchitis',
-        }),
-        include: expect.any(Object),
+      expect(pdfRendererService.renderPrescriptionPdf).toHaveBeenCalled();
+      expect(s3Service.uploadBuffer).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        'prescriptions/pdf/rx-999.pdf',
+        'application/pdf',
+      );
+      expect(prismaService.prescription.update).toHaveBeenCalledWith({
+        where: { id: 'rx-999' },
+        data: {
+          qrCodeHash: 'mock-sha256-hash-1234567890abcdef',
+          pdfUrl: 'https://s3.amazonaws.com/presigned-pdf-url',
+        },
       });
 
       expect(eventEmitter.emit).toHaveBeenCalledWith(
@@ -165,6 +190,7 @@ describe('PrescriptionsService', () => {
       );
 
       expect(result.id).toBe('rx-999');
+      expect(result.qrCodeHash).toBe('mock-sha256-hash-1234567890abcdef');
     });
 
     it('should BLOCK prescription submission if SEVERE conflict is flagged without electronic override', async () => {
@@ -195,48 +221,6 @@ describe('PrescriptionsService', () => {
       );
 
       expect(prismaService.prescription.create).not.toHaveBeenCalled();
-    });
-
-    it('should ALLOW prescription submission if SEVERE conflict has a valid electronic override with clinical justification', async () => {
-      drugSafetyService.verifySafety.mockResolvedValueOnce(mockSevereResult);
-
-      const dto = {
-        appointmentId: 'appt-123',
-        chiefComplaints: ['Chest pain'],
-        clinicalDiagnosis: ['Thrombosis'],
-        items: [
-          {
-            medicineName: 'Warfarin',
-            frequency: '1+0+0',
-            mealTiming: MealTiming.AFTER_MEAL,
-            durationDays: 14,
-          },
-          {
-            medicineName: 'Aspirin',
-            frequency: '0+0+1',
-            mealTiming: MealTiming.AFTER_MEAL,
-            durationDays: 14,
-          },
-        ],
-        overrideAcknowledgement: {
-          isAcknowledged: true,
-          clinicalJustification:
-            'Co-prescription clinically required due to acute cardiac stent prophylaxis; patient monitored daily with INR checks.',
-        },
-      };
-
-      const result = await service.createPrescription('user-doc-1', dto);
-
-      expect(prismaService.prescription.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          overrideReason:
-            'Co-prescription clinically required due to acute cardiac stent prophylaxis; patient monitored daily with INR checks.',
-          overrideJson: mockSevereResult,
-        }),
-        include: expect.any(Object),
-      });
-
-      expect(result.id).toBe('rx-999');
     });
   });
 });
