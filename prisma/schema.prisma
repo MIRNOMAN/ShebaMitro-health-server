@@ -92,6 +92,7 @@ model User {
   doctorProfile       DoctorProfile?
   labProfile          LabProfile?
   pharmacyProfile     PharmacyProfile?
+  messages            Message[]
 
   @@index([email, role])
   @@index([phone, isVerified])
@@ -217,6 +218,7 @@ model Appointment {
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
   prescription  Prescription?
+  messages      Message[]
 
   @@unique([doctorId, slotStartTime])
   @@index([doctorId, status])
@@ -326,3 +328,21 @@ model PharmacyOrder {
   @@index([pharmacyId, status])
   @@map("pharmacy_orders")
 }
+
+model Message {
+  id            String      @id @default(uuid())
+  appointmentId String      @map("appointment_id")
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  senderId      String      @map("sender_id")
+  sender        User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content       String
+  fileUrl       String?     @map("file_url")
+  isRead        Boolean     @default(false) @map("is_read")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([appointmentId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
