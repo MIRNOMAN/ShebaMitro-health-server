@@ -17,7 +17,9 @@ import { OtpModule } from './modules/otp/otp.module.js';
 import { DoctorModule } from './modules/doctors/doctors.module.js';
 import { AppointmentsModule } from './modules/appointments/appointments.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TeleconsultModule } from './modules/teleconsult/teleconsult.module.js';
+import { PrescriptionModule } from './modules/prescriptions/prescriptions.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -32,6 +34,9 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
       load: [appConfig, databaseConfig, jwtConfig, redisConfig, awsConfig],
     }),
 
+    // ── Event Emitter ───────────────────────────────────────────
+    EventEmitterModule.forRoot(),
+
     // ── Database & Global Common Modules ────────────────────────
     DatabaseModule,
     PaginationModule,
@@ -45,6 +50,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     AppointmentsModule,
     ChatModule,
     TeleconsultModule,
+    PrescriptionModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation

@@ -30,6 +30,7 @@ enum AppointmentType {
 enum AppointmentStatus {
   PENDING
   CONFIRMED
+  IN_PROGRESS
   COMPLETED
   CANCELLED
 }
@@ -238,6 +239,7 @@ model Prescription {
   chiefComplaints String?            @map("chief_complaints")
   vitalsJson      Json?              @map("vitals_json")
   advice          String?
+  followUpDate    DateTime?          @map("follow_up_date")
   qrCodeHash      String?            @map("qr_code_hash")
   pdfUrl          String?            @map("pdf_url")
   deletedAt       DateTime?          @map("deleted_at")
