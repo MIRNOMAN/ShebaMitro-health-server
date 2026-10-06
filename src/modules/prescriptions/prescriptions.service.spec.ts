@@ -11,6 +11,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { S3Service } from '../../common/storage/s3.service.js';
 import { DrugSafetyService } from './drug-safety.service.js';
 import { PdfRendererService } from './pdf-renderer.service.js';
+import { DosageParserService } from './dosage-parser.service.js';
 import { PrescriptionFinalizedEvent } from './events/prescription-finalized.event.js';
 
 describe('PrescriptionsService', () => {
@@ -129,6 +130,10 @@ describe('PrescriptionsService', () => {
       },
     };
 
+    const dosageParserService = {
+      parseAndScheduleItemReminders: jest.fn().mockResolvedValue([]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PrescriptionsService,
@@ -137,6 +142,7 @@ describe('PrescriptionsService', () => {
         { provide: DrugSafetyService, useValue: drugSafetyService },
         { provide: PdfRendererService, useValue: pdfRendererService },
         { provide: S3Service, useValue: s3Service },
+        { provide: DosageParserService, useValue: dosageParserService },
       ],
     }).compile();
 

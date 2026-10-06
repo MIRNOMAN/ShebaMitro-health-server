@@ -14,6 +14,7 @@ import { CreatePrescriptionDto } from './dto/create-prescription.dto.js';
 import { VerifyDrugSafetyDto } from './dto/verify-drug-safety.dto.js';
 import { DrugSafetyService, DrugSafetyResult } from './drug-safety.service.js';
 import { PdfRendererService } from './pdf-renderer.service.js';
+import { DosageParserService } from './dosage-parser.service.js';
 import { PrescriptionFinalizedEvent } from './events/prescription-finalized.event.js';
 
 @Injectable()
@@ -26,19 +27,32 @@ export class PrescriptionsService {
     private readonly drugSafetyService: DrugSafetyService,
     private readonly pdfRendererService: PdfRendererService,
     private readonly s3Service: S3Service,
+    private readonly dosageParserService: DosageParserService,
   ) {}
 
   /**
    * Event listener: Fires automatically on PrescriptionFinalizedEvent
    * Renders institutional medical PDF, generates cryptographically signed QR code, uploads to S3, and stores presigned URL & hash.
+   * Also parses prescription dosage patterns and schedules delayed BullMQ medicine reminders.
    */
   @OnEvent('prescription.finalized')
   async handlePrescriptionFinalized(event: PrescriptionFinalizedEvent) {
     this.logger.log(`Handling PrescriptionFinalizedEvent for prescription ID ${event.prescriptionId}`);
     try {
       await this.generateAndStorePdf(event.prescriptionId, event.prescription);
+
+      if (event.prescription && Array.isArray(event.prescription.items)) {
+        for (const item of event.prescription.items) {
+          await this.dosageParserService.parseAndScheduleItemReminders({
+            patientId: event.patientId,
+            prescriptionItemId: item.id,
+            schedulePattern: item.schedulePattern || item.frequency || '1+0+1',
+            durationDays: item.durationDays,
+          });
+        }
+      }
     } catch (err: any) {
-      this.logger.error(`Failed to handle PDF rendering on PrescriptionFinalizedEvent: ${err.message}`);
+      this.logger.error(`Failed to handle PDF rendering or reminder scheduling on PrescriptionFinalizedEvent: ${err.message}`);
     }
   }
 

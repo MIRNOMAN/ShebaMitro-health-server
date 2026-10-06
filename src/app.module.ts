@@ -18,6 +18,8 @@ import { DoctorModule } from './modules/doctors/doctors.module.js';
 import { AppointmentsModule } from './modules/appointments/appointments.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { BullModule } from '@nestjs/bullmq';
+import { ConfigService } from '@nestjs/config';
 import { TeleconsultModule } from './modules/teleconsult/teleconsult.module.js';
 import { PrescriptionModule } from './modules/prescriptions/prescriptions.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
@@ -32,6 +34,18 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
       isGlobal: true,
       validate: validateEnv,
       load: [appConfig, databaseConfig, jwtConfig, redisConfig, awsConfig],
+    }),
+
+    // ── BullMQ Queue Configuration ──────────────────────────────
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host') || '127.0.0.1',
+          port: configService.get<number>('redis.port') || 6379,
+        },
+      }),
     }),
 
     // ── Event Emitter ───────────────────────────────────────────
