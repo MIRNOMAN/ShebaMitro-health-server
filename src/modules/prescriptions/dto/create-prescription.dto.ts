@@ -14,6 +14,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MealTiming } from '@prisma/client';
+import { OverrideAcknowledgementDto } from './override-acknowledgement.dto.js';
 
 export class VitalsDto {
   @ApiPropertyOptional({ example: '120/80', description: 'Blood pressure in mmHg' })
@@ -116,4 +117,13 @@ export class CreatePrescriptionDto {
   @ValidateNested({ each: true })
   @Type(() => PrescriptionItemDto)
   items!: PrescriptionItemDto[];
+
+  @ApiPropertyOptional({
+    type: OverrideAcknowledgementDto,
+    description: 'Electronic override acknowledgement for severe drug interaction/allergy conflicts',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OverrideAcknowledgementDto)
+  overrideAcknowledgement?: OverrideAcknowledgementDto;
 }

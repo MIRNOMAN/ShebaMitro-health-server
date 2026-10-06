@@ -10,6 +10,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentStatus, MealTiming } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto.js';
+import { VerifyDrugSafetyDto } from './dto/verify-drug-safety.dto.js';
+import { DrugSafetyService, DrugSafetyResult } from './drug-safety.service.js';
 import { PrescriptionFinalizedEvent } from './events/prescription-finalized.event.js';
 
 @Injectable()
@@ -19,12 +21,23 @@ export class PrescriptionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly drugSafetyService: DrugSafetyService,
   ) {}
+
+  /**
+   * POST /prescriptions/verify-safety
+   * Cross-reference prescribed medications against known drug interaction database tables and patient allergy list.
+   * Return severity levels: SAFE, MODERATE, SEVERE.
+   */
+  async verifyDrugSafety(dto: VerifyDrugSafetyDto): Promise<DrugSafetyResult> {
+    return this.drugSafetyService.verifySafety(dto);
+  }
 
   /**
    * POST /api/v1/prescriptions (Doctor only)
    * 1. Validate that appointment status is IN_PROGRESS
-   * 2. Accept CreatePrescriptionDto (chiefComplaints[], clinicalDiagnosis[], vitalsJson, advice, followUpDate, items[])
+   * 2. Cross-reference drug safety; if SEVERE conflict is flagged, block submission until doctor
+   *    submits an electronic override acknowledgement with clinical justification.
    * 3. Save atomically in database
    * 4. Fire PrescriptionFinalizedEvent
    */
@@ -64,7 +77,36 @@ export class PrescriptionsService {
       );
     }
 
-    // 5. Save atomically in database via Prisma transaction
+    // 5. Cross-reference drug safety against interactions & patient allergy list
+    const safetyResult = await this.drugSafetyService.verifySafety({
+      appointmentId: dto.appointmentId,
+      patientId: appointment.patientId,
+      medicines: dto.items,
+    });
+
+    // 6. Block submission if SEVERE conflict is flagged without valid electronic override
+    if (safetyResult.severity === 'SEVERE') {
+      const override = dto.overrideAcknowledgement;
+
+      if (!override || !override.isAcknowledged || !override.clinicalJustification) {
+        this.logger.warn(
+          `Prescription submission blocked for appointment ${dto.appointmentId}: severe conflict flagged without electronic override`,
+        );
+        throw new BadRequestException({
+          statusCode: 400,
+          error: 'Bad Request',
+          message:
+            'Prescription submission blocked due to SEVERE drug interaction or allergy conflict. Doctor electronic override acknowledgement with clinical justification is required.',
+          safetyResult,
+        });
+      }
+
+      this.logger.log(
+        `Doctor submitted electronic override for appointment ${dto.appointmentId}: "${override.clinicalJustification}"`,
+      );
+    }
+
+    // 7. Save atomically in database via Prisma transaction
     const prescription = await this.prisma.$transaction(async (tx) => {
       const existing = await tx.prescription.findUnique({
         where: { appointmentId: dto.appointmentId },
@@ -94,6 +136,8 @@ export class PrescriptionsService {
           vitalsJson: dto.vitalsJson ? (dto.vitalsJson as any) : null,
           advice: dto.advice || null,
           followUpDate: dto.followUpDate ? new Date(dto.followUpDate) : null,
+          overrideReason: dto.overrideAcknowledgement?.clinicalJustification || null,
+          overrideJson: safetyResult ? (safetyResult as any) : null,
           items: {
             create: dto.items.map((item) => ({
               medicineName: item.medicineName,
@@ -129,7 +173,7 @@ export class PrescriptionsService {
       return createdPrescription;
     });
 
-    // 6. Fire PrescriptionFinalizedEvent
+    // 8. Fire PrescriptionFinalizedEvent
     const finalizedEvent = new PrescriptionFinalizedEvent(
       prescription.id,
       prescription.appointmentId,

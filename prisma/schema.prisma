@@ -240,6 +240,8 @@ model Prescription {
   vitalsJson      Json?              @map("vitals_json")
   advice          String?
   followUpDate    DateTime?          @map("follow_up_date")
+  overrideReason  String?            @map("override_reason")
+  overrideJson    Json?              @map("override_json")
   qrCodeHash      String?            @map("qr_code_hash")
   pdfUrl          String?            @map("pdf_url")
   deletedAt       DateTime?          @map("deleted_at")

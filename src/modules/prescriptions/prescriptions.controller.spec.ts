@@ -30,8 +30,16 @@ describe('PrescriptionsController', () => {
     ],
   };
 
+  const mockSafetyResult = {
+    severity: 'SAFE',
+    isBlocked: false,
+    requiresOverride: false,
+    conflicts: [],
+  };
+
   beforeEach(async () => {
     service = {
+      verifyDrugSafety: jest.fn().mockResolvedValue(mockSafetyResult),
       createPrescription: jest.fn().mockResolvedValue(mockPrescription),
       getPrescriptionById: jest.fn().mockResolvedValue(mockPrescription),
     };
@@ -46,6 +54,20 @@ describe('PrescriptionsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('POST /prescriptions/verify-safety', () => {
+    it('should call verifyDrugSafety and return safety analysis result', async () => {
+      const dto = {
+        appointmentId: 'appt-123',
+        medicines: [{ medicineName: 'Warfarin' }, { medicineName: 'Aspirin' }],
+      };
+
+      const result = await controller.verifyDrugSafety(dto);
+
+      expect(service.verifyDrugSafety).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(mockSafetyResult);
+    });
   });
 
   describe('POST /api/v1/prescriptions', () => {
