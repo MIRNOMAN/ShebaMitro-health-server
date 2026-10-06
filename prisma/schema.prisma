@@ -71,6 +71,24 @@ enum PharmacyOrderStatus {
   CANCELLED
 }
 
+enum PaymentGateway {
+  BKASH
+  STRIPE
+}
+
+enum OrderType {
+  APPOINTMENT
+  LAB_ORDER
+  PHARMACY_ORDER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 // ──────────────────────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────────────────────
@@ -381,5 +399,42 @@ model Message {
   @@index([appointmentId, createdAt])
   @@index([senderId])
   @@map("messages")
+}
+
+model Transaction {
+  id                 String            @id @default(uuid())
+  orderType          OrderType         @map("order_type")
+  orderId            String            @map("order_id")
+  paymentGateway     PaymentGateway    @map("payment_gateway")
+  amount             Float
+  currency           String            @default("BDT")
+  status             TransactionStatus @default(PENDING)
+  paymentIntentId    String?           @map("payment_intent_id")
+  transactionId      String?           @map("transaction_id")
+  idempotencyKey     String            @unique @map("idempotency_key")
+  platformCommission Float             @default(0) @map("platform_commission")
+  providerAmount     Float             @default(0) @map("provider_amount")
+  providerId         String?           @map("provider_id")
+  providerType       String?           @map("provider_type")
+  metadataJson       Json?             @map("metadata_json")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  @@index([orderId, orderType])
+  @@index([status])
+  @@index([providerId])
+  @@map("transactions")
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  providerId   String   @unique @map("provider_id")
+  providerType String   @map("provider_type")
+  balance      Float    @default(0)
+  totalEarned  Float    @default(0) @map("total_earned")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("wallets")
 }
 
