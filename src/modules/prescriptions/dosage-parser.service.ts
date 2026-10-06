@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ReminderStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RemindersQueueService } from './reminders-queue.service.js';
@@ -154,4 +154,73 @@ export class DosageParserService {
 
     return createdReminders;
   }
+
+  /**
+   * Record TAKEN or SKIPPED status for a medicine reminder and compute patient compliance rate
+   */
+  async acknowledgeReminder(
+    userId: string,
+    reminderId: string,
+    status: ReminderStatus,
+  ) {
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+    }
+
+    const reminder = await this.prisma.medicineReminder.findUnique({
+      where: { id: reminderId },
+    });
+
+    if (!reminder) {
+      throw new NotFoundException(`Medicine reminder with ID ${reminderId} not found`);
+    }
+
+    if (reminder.patientId !== patientProfile.id) {
+      throw new ForbiddenException(
+        'Access denied. You do not have permission to acknowledge this reminder.',
+      );
+    }
+
+    const updatedReminder = await this.prisma.medicineReminder.update({
+      where: { id: reminderId },
+      data: {
+        status,
+        acknowledgedAt: new Date(),
+      },
+    });
+
+    // Compute patient compliance rate across all reminders
+    const allReminders = await this.prisma.medicineReminder.findMany({
+      where: { patientId: patientProfile.id },
+    });
+
+    const totalReminders = allReminders.length;
+    const takenCount = allReminders.filter((r) => r.status === ReminderStatus.TAKEN).length;
+    const skippedCount = allReminders.filter((r) => r.status === ReminderStatus.SKIPPED).length;
+    const pendingCount = allReminders.filter((r) => r.status === ReminderStatus.PENDING).length;
+
+    const complianceRate =
+      totalReminders > 0 ? Number(((takenCount / totalReminders) * 100).toFixed(1)) : 0;
+
+    this.logger.log(
+      `Patient ${patientProfile.id} acknowledged reminder ${reminderId} as ${status}. Updated compliance rate: ${complianceRate}%`,
+    );
+
+    return {
+      reminder: updatedReminder,
+      complianceRate,
+      complianceSummary: {
+        totalReminders,
+        takenCount,
+        skippedCount,
+        pendingCount,
+        complianceRatePercentage: complianceRate,
+      },
+    };
+  }
 }
+

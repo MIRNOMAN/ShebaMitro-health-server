@@ -3,10 +3,13 @@ import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from '../../database/database.module.js';
 import { S3Service } from '../../common/storage/s3.service.js';
 import { PrescriptionsController } from './prescriptions.controller.js';
+import { RemindersController } from './reminders.controller.js';
 import { PrescriptionsService } from './prescriptions.service.js';
 import { DrugSafetyService } from './drug-safety.service.js';
 import { PdfRendererService } from './pdf-renderer.service.js';
 import { DosageParserService } from './dosage-parser.service.js';
+import { WebPushService } from './web-push.service.js';
+import { WhatsAppService } from './whatsapp.service.js';
 import {
   RemindersQueueService,
   RemindersProcessor,
@@ -20,7 +23,7 @@ import {
       name: MEDICINE_REMINDERS_QUEUE,
     }),
   ],
-  controllers: [PrescriptionsController],
+  controllers: [PrescriptionsController, RemindersController],
   providers: [
     PrescriptionsService,
     DrugSafetyService,
@@ -28,6 +31,8 @@ import {
     DosageParserService,
     RemindersQueueService,
     RemindersProcessor,
+    WebPushService,
+    WhatsAppService,
     S3Service,
   ],
   exports: [
@@ -36,6 +41,8 @@ import {
     PdfRendererService,
     DosageParserService,
     RemindersQueueService,
+    WebPushService,
+    WhatsAppService,
     S3Service,
   ],
 })

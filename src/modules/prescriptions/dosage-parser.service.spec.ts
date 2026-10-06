@@ -140,4 +140,49 @@ describe('DosageParserService', () => {
       expect(result.length).toBe(2);
     });
   });
+
+  describe('acknowledgeReminder', () => {
+    it('should update status to TAKEN and compute patient compliance rate', async () => {
+      prismaService.patientProfile = {
+        findUnique: jest.fn().mockResolvedValue({ id: 'patient-123', userId: 'user-pat-1' }),
+      };
+      prismaService.medicineReminder.findUnique = jest.fn().mockResolvedValue({
+        id: 'rem-123',
+        patientId: 'patient-123',
+        status: ReminderStatus.PENDING,
+      });
+      prismaService.medicineReminder.update = jest.fn().mockResolvedValue({
+        id: 'rem-123',
+        patientId: 'patient-123',
+        status: ReminderStatus.TAKEN,
+        acknowledgedAt: new Date(),
+      });
+      prismaService.medicineReminder.findMany = jest.fn().mockResolvedValue([
+        { id: 'rem-123', status: ReminderStatus.TAKEN },
+        { id: 'rem-124', status: ReminderStatus.TAKEN },
+        { id: 'rem-125', status: ReminderStatus.SKIPPED },
+        { id: 'rem-126', status: ReminderStatus.PENDING },
+      ]);
+
+      const result = await service.acknowledgeReminder(
+        'user-pat-1',
+        'rem-123',
+        ReminderStatus.TAKEN,
+      );
+
+      expect(prismaService.medicineReminder.update).toHaveBeenCalledWith({
+        where: { id: 'rem-123' },
+        data: {
+          status: ReminderStatus.TAKEN,
+          acknowledgedAt: expect.any(Date),
+        },
+      });
+
+      // 2 taken out of 4 total = 50%
+      expect(result.complianceRate).toBe(50);
+      expect(result.complianceSummary.takenCount).toBe(2);
+      expect(result.complianceSummary.skippedCount).toBe(1);
+    });
+  });
 });
+
