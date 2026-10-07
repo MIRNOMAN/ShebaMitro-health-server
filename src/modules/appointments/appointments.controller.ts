@@ -33,7 +33,9 @@ export class AppointmentsController {
     description:
       'Acquires a distributed lock using Redlock on key lock:doctor:{doctorId}:slot:{slotTime}. In a Prisma transaction, verifies slot availability, sets status to PENDING with a 10-minute payment grace period, and records an expiration job in BullMQ.',
   })
-  @ResponseMessage('Appointment created successfully. Please complete payment within 10 minutes.')
+  @ResponseMessage(
+    'Appointment created successfully. Please complete payment within 10 minutes.',
+  )
   async createAppointment(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateAppointmentDto,
@@ -48,7 +50,9 @@ export class AppointmentsController {
     description:
       'Transitions appointment status from PENDING to CONFIRMED, cancels BullMQ expiration job, and emits WebSocket notification.',
   })
-  @ResponseMessage('Payment confirmed successfully. Appointment is now CONFIRMED.')
+  @ResponseMessage(
+    'Payment confirmed successfully. Appointment is now CONFIRMED.',
+  )
   async confirmPayment(
     @Param('id') appointmentId: string,
     @CurrentUser('id') userId: string,

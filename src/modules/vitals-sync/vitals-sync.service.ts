@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { VitalsSyncGateway } from './vitals-sync.gateway.js';
 import { SyncVitalsDto } from './dto/sync-vitals.dto.js';
@@ -26,7 +31,9 @@ export class VitalsSyncService {
     const vitalsInput = dto.vitals || [];
 
     if (!Array.isArray(vitalsInput) || vitalsInput.length === 0) {
-      throw new BadRequestException('At least one vital reading must be provided for sync');
+      throw new BadRequestException(
+        'At least one vital reading must be provided for sync',
+      );
     }
 
     // Resolve caller's patient profile if caller is a PATIENT
@@ -76,7 +83,9 @@ export class VitalsSyncService {
       }
 
       // 4. Save BiometricVital to DB
-      const recordedAtDate = item.recordedAt ? new Date(item.recordedAt) : new Date();
+      const recordedAtDate = item.recordedAt
+        ? new Date(item.recordedAt)
+        : new Date();
 
       const vitalRecord = await this.prisma.biometricVital.create({
         data: {
@@ -106,12 +115,15 @@ export class VitalsSyncService {
         );
 
         // Find assigned cardiologist for this patient
-        const assignedCardiologist = await this.findAssignedCardiologist(patientId);
+        const assignedCardiologist =
+          await this.findAssignedCardiologist(patientId);
 
         // Fetch patient details for notification
         const patientProfile = await this.prisma.patientProfile.findUnique({
           where: { id: patientId },
-          include: { user: { select: { name: true, email: true, phone: true } } },
+          include: {
+            user: { select: { name: true, email: true, phone: true } },
+          },
         });
 
         const alertMessage = `Emergency Alert: Patient ${patientProfile?.user?.name || patientId} recorded ${vitalRecord.type} value ${vitalRecord.value}${vitalRecord.unit} (Threshold: ${alertDetails.threshold}).`;
@@ -224,7 +236,9 @@ export class VitalsSyncService {
       return byUserId.id;
     }
 
-    throw new NotFoundException(`Patient profile not found for ID: ${providedId}`);
+    throw new NotFoundException(
+      `Patient profile not found for ID: ${providedId}`,
+    );
   }
 
   /**
@@ -235,38 +249,41 @@ export class VitalsSyncService {
    */
   private async findAssignedCardiologist(patientId: string) {
     // 1. Search Appointment with Cardiology doctor
-    const appointmentWithCardiologist = await this.prisma.appointment.findFirst({
-      where: {
-        patientId,
-        doctor: {
-          specialization: {
-            contains: 'Cardiology',
-            mode: 'insensitive',
+    const appointmentWithCardiologist = await this.prisma.appointment.findFirst(
+      {
+        where: {
+          patientId,
+          doctor: {
+            specialization: {
+              contains: 'Cardiology',
+              mode: 'insensitive',
+            },
           },
         },
+        orderBy: { createdAt: 'desc' },
+        include: { doctor: true },
       },
-      orderBy: { createdAt: 'desc' },
-      include: { doctor: true },
-    });
+    );
 
     if (appointmentWithCardiologist?.doctor) {
       return appointmentWithCardiologist.doctor;
     }
 
     // 2. Search Prescription with Cardiology doctor
-    const prescriptionWithCardiologist = await this.prisma.prescription.findFirst({
-      where: {
-        patientId,
-        doctor: {
-          specialization: {
-            contains: 'Cardiology',
-            mode: 'insensitive',
+    const prescriptionWithCardiologist =
+      await this.prisma.prescription.findFirst({
+        where: {
+          patientId,
+          doctor: {
+            specialization: {
+              contains: 'Cardiology',
+              mode: 'insensitive',
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      include: { doctor: true },
-    });
+        orderBy: { createdAt: 'desc' },
+        include: { doctor: true },
+      });
 
     if (prescriptionWithCardiologist?.doctor) {
       return prescriptionWithCardiologist.doctor;
@@ -321,7 +338,11 @@ export class VitalsSyncService {
       orderBy: { createdAt: 'desc' },
       include: {
         vital: true,
-        patient: { include: { user: { select: { name: true, email: true, phone: true } } } },
+        patient: {
+          include: {
+            user: { select: { name: true, email: true, phone: true } },
+          },
+        },
         doctor: { select: { id: true, name: true, specialization: true } },
       },
     });

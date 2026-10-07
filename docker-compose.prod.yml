@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # ──────────────────────────────────────────────────────────────
+  # 1. NestJS Institutional Healthcare Backend API
+  # ──────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: shebamitro_api_prod
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-PostgresSecure2026!}@postgres:5432/${POSTGRES_DB:-shebamitro_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecure2026!}
+      JWT_SECRET: ${JWT_SECRET:-ShebaMitroSuperSecretJwtKey2026ProductionKeyMustBeLong}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://shebamitro.health,https://app.shebamitro.health}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-shebamitro-attachments-prod}
+      AWS_S3_REGION: ${AWS_S3_REGION:-ap-southeast-1}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_PHONE: ${TWILIO_FROM_PHONE:-}
+      GOOGLE_TTS_API_KEY: ${GOOGLE_TTS_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shebamitro_prod_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1536M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ──────────────────────────────────────────────────────────────
+  # 2. PostgreSQL 16 with pg_trgm & uuid-ossp Extensions
+  # ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: shebamitro_db_prod
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-PostgresSecure2026!}
+      POSTGRES_DB: ${POSTGRES_DB:-shebamitro_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-extensions.sql:/docker-entrypoint-initdb.d/01-init-extensions.sql:ro
+    networks:
+      - shebamitro_prod_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-shebamitro_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────────────────────────────────────
+  # 3. Redis 7 High-Throughput In-Memory Store & BullMQ Broker
+  # ──────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: shebamitro_redis_prod
+    restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 1024mb
+      --maxmemory-policy noeviction
+      --requirepass ${REDIS_PASSWORD:-RedisSecure2026!}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - shebamitro_prod_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisSecure2026!}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # ──────────────────────────────────────────────────────────────
+  # 4. Bull-Board Real-time Queue Monitoring UI
+  # ──────────────────────────────────────────────────────────────
+  bull-board:
+    image: node:20-alpine
+    container_name: shebamitro_bull_board_prod
+    restart: always
+    working_dir: /bull-board
+    command: >
+      sh -c "npm install -g @bull-board/cli @bull-board/api @bull-board/ui ioredis bullmq &&
+             npx @bull-board/cli --redis-host redis --redis-port 6379 --redis-password ${REDIS_PASSWORD:-RedisSecure2026!} --queues medicine-reminders,chronic-refill,appointments-queue --port 3000"
+    ports:
+      - "3001:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecure2026!}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - shebamitro_prod_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+# ──────────────────────────────────────────────────────────────
+# Networks & Persistent Storage Volumes
+# ──────────────────────────────────────────────────────────────
+networks:
+  shebamitro_prod_network:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local

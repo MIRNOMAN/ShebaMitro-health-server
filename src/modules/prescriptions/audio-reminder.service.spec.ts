@@ -24,15 +24,21 @@ describe('AudioReminderService', () => {
     };
 
     whatsAppService = {
-      sendVoiceNote: jest.fn().mockResolvedValue({ success: true, audioUrl: 'https://mock-s3.shebamitro.health/audio.mp3' }),
+      sendVoiceNote: jest.fn().mockResolvedValue({
+        success: true,
+        audioUrl: 'https://mock-s3.shebamitro.health/audio.mp3',
+      }),
     };
 
     configService = {
       get: jest.fn().mockImplementation((key: string, defaultVal?: string) => {
         if (key === 'GOOGLE_TTS_API_KEY') return 'mock-google-tts-key';
-        if (key === 'TWILIO_ACCOUNT_SID') return process.env.TWILIO_ACCOUNT_SID || 'mock-twilio-account-sid';
-        if (key === 'TWILIO_AUTH_TOKEN') return process.env.TWILIO_AUTH_TOKEN || 'mock-twilio-auth-token';
-        if (key === 'TWILIO_FROM_PHONE') return process.env.TWILIO_FROM_PHONE || '+18005550199';
+        if (key === 'TWILIO_ACCOUNT_SID')
+          return process.env.TWILIO_ACCOUNT_SID || 'mock-twilio-account-sid';
+        if (key === 'TWILIO_AUTH_TOKEN')
+          return process.env.TWILIO_AUTH_TOKEN || 'mock-twilio-auth-token';
+        if (key === 'TWILIO_FROM_PHONE')
+          return process.env.TWILIO_FROM_PHONE || '+18005550199';
         return defaultVal;
       }),
     };
@@ -93,7 +99,9 @@ describe('AudioReminderService', () => {
         medicineName: 'Napa Extra',
       });
 
-      expect(text).toBe('আপনার ওষুধ Napa Extra খাওয়ার সময় হয়েছে। অনুগ্রহ করে সঠিক সময়ে ওষুধ সেবন করুন।');
+      expect(text).toBe(
+        'আপনার ওষুধ Napa Extra খাওয়ার সময় হয়েছে। অনুগ্রহ করে সঠিক সময়ে ওষুধ সেবন করুন।',
+      );
     });
   });
 
@@ -122,7 +130,9 @@ describe('AudioReminderService', () => {
         'bn-BD',
       );
 
-      expect(result.audioUrl).toContain('https://mock-s3.shebamitro.health/prescriptions/audio-reminders/rem-test-101');
+      expect(result.audioUrl).toContain(
+        'https://mock-s3.shebamitro.health/prescriptions/audio-reminders/rem-test-101',
+      );
       expect(result.buffer).toBeInstanceOf(Buffer);
       expect(s3Service.uploadBuffer).toHaveBeenCalledWith(
         expect.any(Buffer),

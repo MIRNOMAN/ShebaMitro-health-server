@@ -11,7 +11,13 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
 import { ReportOcrService } from './report-ocr.service.js';
@@ -35,11 +41,14 @@ export class ReportOcrController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOperation({
-    summary: 'Upload external lab report scan (CBC, Lipid, HbA1c) & run OCR extraction',
+    summary:
+      'Upload external lab report scan (CBC, Lipid, HbA1c) & run OCR extraction',
     description:
       'Extracts structured numerical biomarkers using AWS Textract / OCR, evaluates medical reference ranges (NORMAL, HIGH, LOW, CRITICAL), and saves records to BiomarkerRecord database table.',
   })
-  @ResponseMessage('Lab report scan processed and biomarkers saved successfully')
+  @ResponseMessage(
+    'Lab report scan processed and biomarkers saved successfully',
+  )
   async uploadReportScan(
     @CurrentUser('id') userId: string,
     @CurrentUser('role') role: string,
@@ -47,7 +56,12 @@ export class ReportOcrController {
     @UploadedFile() file?: any,
   ) {
     const fileBuffer = file?.buffer;
-    return this.reportOcrService.processReportScan(userId, role, dto, fileBuffer);
+    return this.reportOcrService.processReportScan(
+      userId,
+      role,
+      dto,
+      fileBuffer,
+    );
   }
 }
 
@@ -62,7 +76,8 @@ export class BiomarkerAnalyticsController {
   @Roles(Role.PATIENT, Role.DOCTOR, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get chronological biomarker data points formatted for frontend charting',
+    summary:
+      'Get chronological biomarker data points formatted for frontend charting',
     description:
       'Exposes chronological numerical trend data points (e.g. marker=hba1c, cholesterol, hemoglobin) formatted for Recharts, Chart.js, and ApexCharts visualization.',
   })

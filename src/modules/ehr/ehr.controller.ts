@@ -7,7 +7,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { EhrService } from './ehr.service.js';
 import { FilterEhrDto, EhrRecordType } from './dto/filter-ehr.dto.js';
@@ -31,7 +36,11 @@ export class EhrController {
     description:
       'Aggregates historical visits, doctor diagnoses, lab reports, and medication histories. Enforces strict consent policies (accessible only by the patient themselves or a doctor with a currently active appointment). Supports dateRange, recordType, and doctorSpecialty filters.',
   })
-  @ApiQuery({ name: 'from', required: false, description: 'Start date ISO string' })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    description: 'Start date ISO string',
+  })
   @ApiQuery({ name: 'to', required: false, description: 'End date ISO string' })
   @ApiQuery({
     name: 'recordType',

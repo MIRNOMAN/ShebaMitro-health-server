@@ -1,10 +1,19 @@
-import { PrismaClient, Role, AppointmentType, AppointmentStatus, PaymentStatus, MealTiming } from '@prisma/client';
+import {
+  PrismaClient,
+  Role,
+  AppointmentType,
+  AppointmentStatus,
+  PaymentStatus,
+  MealTiming,
+} from '@prisma/client';
 import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed with 10 dummy providers across all roles...');
+  console.log(
+    '🌱 Starting database seed with 10 dummy providers across all roles...',
+  );
 
   const passwordHash = await argon2.hash('Password123!');
 
@@ -108,8 +117,18 @@ async function main() {
           reviewCount: 128,
           availabilities: {
             create: [
-              { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '13:00', slotDurationMinutes: 30 },
-              { dayOfWeek: 'WEDNESDAY', startTime: '14:00', endTime: '18:00', slotDurationMinutes: 30 },
+              {
+                dayOfWeek: 'MONDAY',
+                startTime: '09:00',
+                endTime: '13:00',
+                slotDurationMinutes: 30,
+              },
+              {
+                dayOfWeek: 'WEDNESDAY',
+                startTime: '14:00',
+                endTime: '18:00',
+                slotDurationMinutes: 30,
+              },
             ],
           },
         },
@@ -139,8 +158,18 @@ async function main() {
           reviewCount: 94,
           availabilities: {
             create: [
-              { dayOfWeek: 'TUESDAY', startTime: '10:00', endTime: '14:00', slotDurationMinutes: 30 },
-              { dayOfWeek: 'THURSDAY', startTime: '15:00', endTime: '19:00', slotDurationMinutes: 30 },
+              {
+                dayOfWeek: 'TUESDAY',
+                startTime: '10:00',
+                endTime: '14:00',
+                slotDurationMinutes: 30,
+              },
+              {
+                dayOfWeek: 'THURSDAY',
+                startTime: '15:00',
+                endTime: '19:00',
+                slotDurationMinutes: 30,
+              },
             ],
           },
         },

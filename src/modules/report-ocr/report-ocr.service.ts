@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { OcrEngineService } from './ocr-engine.service.js';
 import { UploadReportScanDto } from './dto/upload-report-scan.dto.js';
@@ -25,13 +30,22 @@ export class ReportOcrService {
     fileBuffer?: Buffer,
   ) {
     // 1. Resolve Patient Profile ID
-    const patientId = await this.resolvePatientProfileId(dto.patientId, callerUserId, callerRole);
+    const patientId = await this.resolvePatientProfileId(
+      dto.patientId,
+      callerUserId,
+      callerRole,
+    );
 
     // 2. Perform OCR Text Extraction
-    const detectedText = await this.ocrEngineService.detectTextFromScan(fileBuffer, dto.rawText);
+    const detectedText = await this.ocrEngineService.detectTextFromScan(
+      fileBuffer,
+      dto.rawText,
+    );
 
     if (!detectedText && !dto.rawText) {
-      throw new BadRequestException('Could not detect text from provided lab scan image/document');
+      throw new BadRequestException(
+        'Could not detect text from provided lab scan image/document',
+      );
     }
 
     // 3. Extract & Validate Structured Numerical Biomarkers
@@ -41,7 +55,9 @@ export class ReportOcrService {
     );
 
     if (extractedBiomarkers.length === 0) {
-      throw new BadRequestException(`No numerical biomarkers could be extracted for test type ${dto.testType}`);
+      throw new BadRequestException(
+        `No numerical biomarkers could be extracted for test type ${dto.testType}`,
+      );
     }
 
     // 4. Save to BiomarkerRecord table
@@ -81,7 +97,10 @@ export class ReportOcrService {
   /**
    * Retrieve chronological data points formatted for frontend charting
    */
-  async getBiomarkersAnalytics(targetPatientId: string, query: QueryBiomarkersDto) {
+  async getBiomarkersAnalytics(
+    targetPatientId: string,
+    query: QueryBiomarkersDto,
+  ) {
     const patientProfile = await this.prisma.patientProfile.findFirst({
       where: {
         OR: [{ id: targetPatientId }, { userId: targetPatientId }],
@@ -89,10 +108,14 @@ export class ReportOcrService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for ID: ${targetPatientId}`);
+      throw new NotFoundException(
+        `Patient profile not found for ID: ${targetPatientId}`,
+      );
     }
 
-    const markerFilter = query.marker ? query.marker.trim().toLowerCase() : undefined;
+    const markerFilter = query.marker
+      ? query.marker.trim().toLowerCase()
+      : undefined;
 
     const records = await this.prisma.biomarkerRecord.findMany({
       where: {
@@ -126,7 +149,9 @@ export class ReportOcrService {
     return {
       patientId: patientProfile.id,
       markerKey: markerFilter || (latest ? latest.markerKey : 'all'),
-      markerName: latest ? latest.markerName : (markerFilter || 'Biomarker Analytics'),
+      markerName: latest
+        ? latest.markerName
+        : markerFilter || 'Biomarker Analytics',
       unit: latest ? latest.unit : '',
       referenceRange: latest ? latest.referenceRange : '',
       latestStatus: latest ? latest.status : 'N/A',
@@ -149,7 +174,9 @@ export class ReportOcrService {
         where: { OR: [{ id: providedId }, { userId: providedId }] },
       });
       if (byId) return byId.id;
-      throw new NotFoundException(`Patient profile not found for ID: ${providedId}`);
+      throw new NotFoundException(
+        `Patient profile not found for ID: ${providedId}`,
+      );
     }
 
     if (callerRole === Role.PATIENT) {
@@ -159,6 +186,8 @@ export class ReportOcrService {
       if (callerProfile) return callerProfile.id;
     }
 
-    throw new BadRequestException('patientId is required when uploading report scans');
+    throw new BadRequestException(
+      'patientId is required when uploading report scans',
+    );
   }
 }

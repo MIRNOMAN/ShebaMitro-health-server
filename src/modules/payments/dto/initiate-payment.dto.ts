@@ -14,7 +14,8 @@ export class InitiatePaymentDto {
 
   @ApiProperty({
     example: 'd3b07384-d113-40e4-a123-123456789abc',
-    description: 'Target order ID (Appointment ID, LabOrder ID, or PharmacyOrder ID)',
+    description:
+      'Target order ID (Appointment ID, LabOrder ID, or PharmacyOrder ID)',
   })
   @IsNotEmpty()
   @IsString()
@@ -31,7 +32,8 @@ export class InitiatePaymentDto {
 
   @ApiPropertyOptional({
     example: 'idempotency-key-uuid-123456',
-    description: 'Unique idempotency key to prevent duplicate payment initiation',
+    description:
+      'Unique idempotency key to prevent duplicate payment initiation',
   })
   @IsOptional()
   @IsString()

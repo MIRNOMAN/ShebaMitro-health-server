@@ -8,7 +8,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { EmergencyService } from './emergency.service.js';
 import { CreateSosDto } from './dto/create-sos.dto.js';
@@ -28,7 +33,8 @@ export class EmergencyController {
   @Public()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Trigger immediate Emergency SOS with Redis Geospatial search, live tracking link SMS, and ambulance dispatch',
+    summary:
+      'Trigger immediate Emergency SOS with Redis Geospatial search, live tracking link SMS, and ambulance dispatch',
     description:
       'Performs Redis GEOSEARCH & GEODIST within a 10km radius to find verified ambulances and hospitals. Generates a temporary live GPS tracking link (valid 2h), sends immediate SMS alert to emergency contacts, and dispatches real-time WebSocket notifications to nearest ambulance driver apps.',
   })
@@ -44,7 +50,9 @@ export class EmergencyController {
   @Get('track/:token')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Retrieve temporary live GPS tracking status using tracking token' })
+  @ApiOperation({
+    summary: 'Retrieve temporary live GPS tracking status using tracking token',
+  })
   @ApiParam({ name: 'token', description: 'Temporary live GPS tracking token' })
   @ResponseMessage('Live tracking status retrieved successfully')
   async getTrackingStatus(@Param('token') token: string) {
@@ -56,7 +64,10 @@ export class EmergencyController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN, Role.DOCTOR)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update ambulance GPS location coordinates in DB and Redis spatial index' })
+  @ApiOperation({
+    summary:
+      'Update ambulance GPS location coordinates in DB and Redis spatial index',
+  })
   @ResponseMessage('Ambulance location updated successfully')
   async updateAmbulanceLocation(
     @Param('id') ambulanceId: string,

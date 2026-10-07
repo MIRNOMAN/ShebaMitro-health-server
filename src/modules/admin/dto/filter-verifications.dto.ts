@@ -17,7 +17,9 @@ export class FilterVerificationsDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ description: 'Filter by doctor name, email, or BMDC registration number' })
+  @ApiPropertyOptional({
+    description: 'Filter by doctor name, email, or BMDC registration number',
+  })
   @IsOptional()
   @IsString()
   search?: string;

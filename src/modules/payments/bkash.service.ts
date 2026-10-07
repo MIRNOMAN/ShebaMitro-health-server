@@ -19,12 +19,15 @@ export interface BkashExecuteResponse {
 @Injectable()
 export class BkashService {
   private readonly logger = new Logger(BkashService.name);
-  private readonly appKey = process.env.BKASH_APP_KEY || 'bkash_sandbox_app_key';
-  private readonly appSecret = process.env.BKASH_APP_SECRET || 'bkash_sandbox_app_secret';
+  private readonly appKey =
+    process.env.BKASH_APP_KEY || 'bkash_sandbox_app_key';
+  private readonly appSecret =
+    process.env.BKASH_APP_SECRET || 'bkash_sandbox_app_secret';
   private readonly username = process.env.BKASH_USERNAME || 'sandbox_username';
   private readonly password = process.env.BKASH_PASSWORD || 'sandbox_password';
   private readonly baseUrl =
-    process.env.BKASH_BASE_URL || 'https://tokenized.sandbox.bka.sh/v1.2.0-beta';
+    process.env.BKASH_BASE_URL ||
+    'https://tokenized.sandbox.bka.sh/v1.2.0-beta';
 
   /**
    * Grant Tokenized Checkout Access Token
@@ -64,7 +67,9 @@ export class BkashService {
   async executePayment(paymentID: string): Promise<BkashExecuteResponse> {
     const trxID = `TRX${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    this.logger.log(`Executed bKash payment ${paymentID}. Generated trxID: ${trxID}`);
+    this.logger.log(
+      `Executed bKash payment ${paymentID}. Generated trxID: ${trxID}`,
+    );
 
     return {
       paymentID,

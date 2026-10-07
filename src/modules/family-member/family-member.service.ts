@@ -7,7 +7,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { CaslAbilityFactory, Action } from '../../common/casl/casl-ability.factory.js';
+import {
+  CaslAbilityFactory,
+  Action,
+} from '../../common/casl/casl-ability.factory.js';
 import { CreateFamilyMemberDto } from './dto/create-family-member.dto.js';
 import { UpdateFamilyMemberDto } from './dto/update-family-member.dto.js';
 import { BookFamilyAppointmentDto } from './dto/book-family-appointment.dto.js';
@@ -31,10 +34,15 @@ export class FamilyMemberService {
     callerRole: string,
     dto: CreateFamilyMemberDto,
   ) {
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.CREATE, 'FamilyMember')) {
-      throw new ForbiddenException('User lacks permission to create family members');
+      throw new ForbiddenException(
+        'User lacks permission to create family members',
+      );
     }
 
     const dobDate = dto.dob ? new Date(dto.dob) : null;
@@ -51,7 +59,9 @@ export class FamilyMemberService {
       },
     });
 
-    this.logger.log(`Created dependent family member [${familyMember.id}] (${dto.relation}) for user [${primaryUserId}]`);
+    this.logger.log(
+      `Created dependent family member [${familyMember.id}] (${dto.relation}) for user [${primaryUserId}]`,
+    );
     return familyMember;
   }
 
@@ -59,10 +69,15 @@ export class FamilyMemberService {
    * List all dependent family members owned by primary user
    */
   async getFamilyMembers(primaryUserId: string, callerRole: string) {
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.READ, 'FamilyMember')) {
-      throw new ForbiddenException('User lacks permission to view family members');
+      throw new ForbiddenException(
+        'User lacks permission to view family members',
+      );
     }
 
     return this.prisma.familyMember.findMany({
@@ -89,7 +104,9 @@ export class FamilyMemberService {
     });
 
     if (!familyMember) {
-      throw new NotFoundException(`Family member not found for ID: ${familyMemberId}`);
+      throw new NotFoundException(
+        `Family member not found for ID: ${familyMemberId}`,
+      );
     }
 
     this.validateFamilyMemberOwnership(primaryUserId, callerRole, familyMember);
@@ -105,7 +122,11 @@ export class FamilyMemberService {
     familyMemberId: string,
     dto: UpdateFamilyMemberDto,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
 
     const updated = await this.prisma.familyMember.update({
       where: { id: familyMember.id },
@@ -130,7 +151,11 @@ export class FamilyMemberService {
     callerRole: string,
     familyMemberId: string,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
 
     await this.prisma.familyMember.delete({
       where: { id: familyMember.id },
@@ -148,11 +173,20 @@ export class FamilyMemberService {
     familyMemberId: string,
     dto: BookFamilyAppointmentDto,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.BOOK_APPOINTMENT, 'Appointment')) {
-      throw new ForbiddenException('User lacks permission to book appointments');
+      throw new ForbiddenException(
+        'User lacks permission to book appointments',
+      );
     }
 
     // Resolve or auto-create primary user's PatientProfile
@@ -172,7 +206,9 @@ export class FamilyMemberService {
     });
 
     if (!doctor) {
-      throw new NotFoundException(`Doctor profile not found for ID: ${dto.doctorId}`);
+      throw new NotFoundException(
+        `Doctor profile not found for ID: ${dto.doctorId}`,
+      );
     }
 
     const slotStart = new Date(dto.slotStartTime);
@@ -189,7 +225,9 @@ export class FamilyMemberService {
     });
 
     if (existing) {
-      throw new ConflictException('Doctor slot already booked for the selected start time');
+      throw new ConflictException(
+        'Doctor slot already booked for the selected start time',
+      );
     }
 
     const appointment = await this.prisma.appointment.create({
@@ -202,7 +240,9 @@ export class FamilyMemberService {
         type: dto.type || 'ONLINE',
         status: 'PENDING',
         paymentStatus: 'UNPAID',
-        notes: dto.notes ? `[Booked for Family Member: ${familyMember.fullName} (${familyMember.relation})] - ${dto.notes}` : `[Booked for Family Member: ${familyMember.fullName} (${familyMember.relation})]`,
+        notes: dto.notes
+          ? `[Booked for Family Member: ${familyMember.fullName} (${familyMember.relation})] - ${dto.notes}`
+          : `[Booked for Family Member: ${familyMember.fullName} (${familyMember.relation})]`,
       },
       include: {
         doctor: { select: { id: true, name: true, specialization: true } },
@@ -225,11 +265,20 @@ export class FamilyMemberService {
     callerRole: string,
     familyMemberId: string,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.VIEW_PRESCRIPTION, 'Prescription')) {
-      throw new ForbiddenException('User lacks permission to view prescriptions');
+      throw new ForbiddenException(
+        'User lacks permission to view prescriptions',
+      );
     }
 
     return this.prisma.prescription.findMany({
@@ -241,7 +290,14 @@ export class FamilyMemberService {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        doctor: { select: { id: true, name: true, specialization: true, hospital: true } },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            hospital: true,
+          },
+        },
         items: true,
         familyMember: true,
       },
@@ -257,11 +313,20 @@ export class FamilyMemberService {
     familyMemberId: string,
     dto: CreateFamilyReminderDto,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.MANAGE_REMINDERS, 'MedicineReminder')) {
-      throw new ForbiddenException('User lacks permission to manage medicine reminders');
+      throw new ForbiddenException(
+        'User lacks permission to manage medicine reminders',
+      );
     }
 
     const prescriptionItem = await this.prisma.prescriptionItem.findUnique({
@@ -269,7 +334,9 @@ export class FamilyMemberService {
     });
 
     if (!prescriptionItem) {
-      throw new NotFoundException(`Prescription item not found for ID: ${dto.prescriptionItemId}`);
+      throw new NotFoundException(
+        `Prescription item not found for ID: ${dto.prescriptionItemId}`,
+      );
     }
 
     let patientProfile = await this.prisma.patientProfile.findUnique({
@@ -296,7 +363,9 @@ export class FamilyMemberService {
       },
     });
 
-    this.logger.log(`Set independent medicine reminder [${reminder.id}] for Family Member [${familyMember.fullName}]`);
+    this.logger.log(
+      `Set independent medicine reminder [${reminder.id}] for Family Member [${familyMember.fullName}]`,
+    );
     return reminder;
   }
 
@@ -308,11 +377,20 @@ export class FamilyMemberService {
     callerRole: string,
     familyMemberId: string,
   ) {
-    const familyMember = await this.getFamilyMemberById(primaryUserId, callerRole, familyMemberId);
-    const ability = this.caslAbilityFactory.createForUser({ id: primaryUserId, role: callerRole });
+    const familyMember = await this.getFamilyMemberById(
+      primaryUserId,
+      callerRole,
+      familyMemberId,
+    );
+    const ability = this.caslAbilityFactory.createForUser({
+      id: primaryUserId,
+      role: callerRole,
+    });
 
     if (!ability.can(Action.MANAGE_REMINDERS, 'MedicineReminder')) {
-      throw new ForbiddenException('User lacks permission to view medicine reminders');
+      throw new ForbiddenException(
+        'User lacks permission to view medicine reminders',
+      );
     }
 
     return this.prisma.medicineReminder.findMany({
@@ -342,7 +420,9 @@ export class FamilyMemberService {
     }
 
     if (familyMember.primaryUserId !== primaryUserId) {
-      throw new ForbiddenException('You do not have authorization to access this family member record');
+      throw new ForbiddenException(
+        'You do not have authorization to access this family member record',
+      );
     }
   }
 }

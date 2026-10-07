@@ -32,7 +32,9 @@ export interface EmergencyAlertPayload {
   },
   namespace: '/vitals',
 })
-export class VitalsSyncGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class VitalsSyncGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -53,7 +55,9 @@ export class VitalsSyncGateway implements OnGatewayConnection, OnGatewayDisconne
   ) {
     if (payload?.roomId) {
       client.join(payload.roomId);
-      this.logger.log(`Client ${client.id} joined vitals room: ${payload.roomId}`);
+      this.logger.log(
+        `Client ${client.id} joined vitals room: ${payload.roomId}`,
+      );
       return { event: 'joinedRoom', data: { roomId: payload.roomId } };
     }
   }
@@ -73,17 +77,27 @@ export class VitalsSyncGateway implements OnGatewayConnection, OnGatewayDisconne
 
       // Targeted emissions to assigned doctor rooms
       if (payload.doctorId) {
-        this.server.to(`doctor_${payload.doctorId}`).emit('emergency_alert', payload);
-        this.server.to(`doctor_${payload.doctorId}`).emit('vital_alert', payload);
+        this.server
+          .to(`doctor_${payload.doctorId}`)
+          .emit('emergency_alert', payload);
+        this.server
+          .to(`doctor_${payload.doctorId}`)
+          .emit('vital_alert', payload);
       }
       if (payload.doctorUserId) {
-        this.server.to(`user_${payload.doctorUserId}`).emit('emergency_alert', payload);
-        this.server.to(`user_${payload.doctorUserId}`).emit('vital_alert', payload);
+        this.server
+          .to(`user_${payload.doctorUserId}`)
+          .emit('emergency_alert', payload);
+        this.server
+          .to(`user_${payload.doctorUserId}`)
+          .emit('vital_alert', payload);
       }
 
       // Targeted emission to patient room
       if (payload.patientId) {
-        this.server.to(`patient_${payload.patientId}`).emit('emergency_alert', payload);
+        this.server
+          .to(`patient_${payload.patientId}`)
+          .emit('emergency_alert', payload);
       }
     }
   }

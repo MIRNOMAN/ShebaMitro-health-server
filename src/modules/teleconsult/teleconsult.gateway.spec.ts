@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { TeleconsultGateway, AuthenticatedSocket } from './teleconsult.gateway.js';
+import {
+  TeleconsultGateway,
+  AuthenticatedSocket,
+} from './teleconsult.gateway.js';
 
 describe('TeleconsultGateway', () => {
   let gateway: TeleconsultGateway;
@@ -37,7 +40,7 @@ describe('TeleconsultGateway', () => {
       leave: jest.fn(),
       emit: jest.fn(),
       disconnect: jest.fn(),
-    } as unknown as AuthenticatedSocket;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -118,7 +121,10 @@ describe('TeleconsultGateway', () => {
 
   describe('handleCallDisconnect', () => {
     it('should leave teleconsult room, emit DISCONNECTED state transition and telemetry', async () => {
-      const payload = { appointmentId: 'appt-tele-1', reason: 'User completed call' };
+      const payload = {
+        appointmentId: 'appt-tele-1',
+        reason: 'User completed call',
+      };
 
       const result = await gateway.handleCallDisconnect(mockSocket, payload);
 

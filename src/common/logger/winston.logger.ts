@@ -5,11 +5,13 @@ const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 /**
  * Custom console log formatter with colors and clean timestamps
  */
-const customConsoleFormat = printf(({ level, message, timestamp, context, ...meta }) => {
-  const ctx = context ? ` [${context}]` : '';
-  const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-  return `${timestamp} ${level}${ctx}: ${message}${metaStr}`;
-});
+const customConsoleFormat = printf(
+  ({ level, message, timestamp, context, ...meta }) => {
+    const ctx = context ? ` [${context}]` : '';
+    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    return `${timestamp} ${level}${ctx}: ${message}${metaStr}`;
+  },
+);
 
 export function createWinstonLogger(serviceName: string = 'ShebaMitro') {
   const isProduction = process.env.NODE_ENV === 'production';

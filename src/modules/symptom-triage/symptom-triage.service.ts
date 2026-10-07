@@ -63,7 +63,8 @@ export class SymptomTriageService {
     dto: TriageRequestDto,
   ): Promise<TriageAiAnalysis> {
     const openaiKey =
-      this.configService.get<string>('OPENAI_API_KEY') || process.env.OPENAI_API_KEY;
+      this.configService.get<string>('OPENAI_API_KEY') ||
+      process.env.OPENAI_API_KEY;
     const anthropicKey =
       this.configService.get<string>('ANTHROPIC_API_KEY') ||
       process.env.ANTHROPIC_API_KEY;
@@ -72,7 +73,9 @@ export class SymptomTriageService {
       try {
         return await this.callOpenAiApi(openaiKey, dto);
       } catch (err: any) {
-        this.logger.warn(`OpenAI API call failed: ${err.message}. Using clinical rule fallback.`);
+        this.logger.warn(
+          `OpenAI API call failed: ${err.message}. Using clinical rule fallback.`,
+        );
       }
     } else if (anthropicKey) {
       try {
@@ -136,7 +139,9 @@ ${dto.additionalNotes ? `- Clinical Notes: ${dto.additionalNotes}` : ''}`;
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
+      throw new Error(
+        `HTTP error ${response.status}: ${await response.text()}`,
+      );
     }
 
     const data = await response.json();
@@ -180,7 +185,9 @@ Respond ONLY with a JSON object format:
     });
 
     if (!response.ok) {
-      throw new Error(`Anthropic HTTP error ${response.status}: ${await response.text()}`);
+      throw new Error(
+        `Anthropic HTTP error ${response.status}: ${await response.text()}`,
+      );
     }
 
     const data = await response.json();
@@ -241,10 +248,17 @@ Respond ONLY with a JSON object format:
         moderateKeywords.some((kw) => symptomLower.includes(kw)));
 
     if (isEmergency) {
-      let specialties = ['Emergency Medicine', 'Cardiology', 'General Medicine'];
+      let specialties = [
+        'Emergency Medicine',
+        'Cardiology',
+        'General Medicine',
+      ];
       if (symptomLower.includes('chest') || symptomLower.includes('heart')) {
         specialties = ['Cardiology', 'General Medicine', 'Internal Medicine'];
-      } else if (symptomLower.includes('stroke') || symptomLower.includes('numbness')) {
+      } else if (
+        symptomLower.includes('stroke') ||
+        symptomLower.includes('numbness')
+      ) {
         specialties = ['Neurology', 'General Medicine'];
       } else if (
         symptomLower.includes('breath') ||
@@ -271,17 +285,27 @@ Respond ONLY with a JSON object format:
 
     if (isModerate) {
       let specialties = ['General Medicine'];
-      if (symptomLower.includes('stomach') || symptomLower.includes('abdominal')) {
+      if (
+        symptomLower.includes('stomach') ||
+        symptomLower.includes('abdominal')
+      ) {
         specialties = ['Gastroenterology', 'General Medicine'];
-      } else if (symptomLower.includes('bone') || symptomLower.includes('joint')) {
+      } else if (
+        symptomLower.includes('bone') ||
+        symptomLower.includes('joint')
+      ) {
         specialties = ['Orthopedics', 'General Medicine'];
-      } else if (symptomLower.includes('skin') || symptomLower.includes('rash')) {
+      } else if (
+        symptomLower.includes('skin') ||
+        symptomLower.includes('rash')
+      ) {
         specialties = ['Dermatology', 'General Medicine'];
       }
 
       return {
         urgency: 'MODERATE',
-        urgencyLabel: 'Moderate - Prompt Consultation Recommended (Within 24-48h)',
+        urgencyLabel:
+          'Moderate - Prompt Consultation Recommended (Within 24-48h)',
         clinicalAnalysis: `Reported symptoms (${dto.symptoms}) lasting ${dto.duration} warrant clinical evaluation by a specialist within 24 to 48 hours.`,
         matchingSpecialties: specialties,
         recommendedAction:
@@ -321,12 +345,14 @@ Respond ONLY with a JSON object format:
     return {
       urgency,
       urgencyLabel: parsed.urgencyLabel || `${urgency} Evaluation Required`,
-      clinicalAnalysis: parsed.clinicalAnalysis || 'Preliminary symptom analysis.',
+      clinicalAnalysis:
+        parsed.clinicalAnalysis || 'Preliminary symptom analysis.',
       matchingSpecialties: Array.isArray(parsed.matchingSpecialties)
         ? parsed.matchingSpecialties
         : ['General Medicine'],
       recommendedAction:
-        parsed.recommendedAction || 'Consult a licensed healthcare professional.',
+        parsed.recommendedAction ||
+        'Consult a licensed healthcare professional.',
       redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags : [],
     };
   }

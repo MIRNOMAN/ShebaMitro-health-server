@@ -21,7 +21,8 @@ export class RemindersQueueService {
   private readonly logger = new Logger(RemindersQueueService.name);
 
   constructor(
-    @InjectQueue(MEDICINE_REMINDERS_QUEUE) private readonly remindersQueue: Queue,
+    @InjectQueue(MEDICINE_REMINDERS_QUEUE)
+    private readonly remindersQueue: Queue,
   ) {}
 
   /**
@@ -32,20 +33,16 @@ export class RemindersQueueService {
     const delay = Math.max(0, intakeTimestamp - Date.now());
     const jobId = `reminder-${payload.reminderId}`;
 
-    const job = await this.remindersQueue.add(
-      'send-reminder',
-      payload,
-      {
-        jobId,
-        delay,
-        removeOnComplete: true,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
+    const job = await this.remindersQueue.add('send-reminder', payload, {
+      jobId,
+      delay,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
       },
-    );
+    });
 
     this.logger.log(
       `Scheduled delayed BullMQ job ${jobId} for reminder ${payload.reminderId} with delay of ${delay}ms`,
@@ -172,42 +169,54 @@ export class RemindersProcessor extends WorkerHost {
       },
     });
 
-    const medicineName = reminder?.prescriptionItem?.medicineName || 'Prescribed Medicine';
+    const medicineName =
+      reminder?.prescriptionItem?.medicineName || 'Prescribed Medicine';
     const genericName = reminder?.prescriptionItem?.genericName || undefined;
-    const diagnosis = reminder?.prescriptionItem?.prescription?.diagnosis || undefined;
-    const schedulePattern = reminder?.prescriptionItem?.schedulePattern || '1+0+1';
+    const diagnosis =
+      reminder?.prescriptionItem?.prescription?.diagnosis || undefined;
+    const schedulePattern =
+      reminder?.prescriptionItem?.schedulePattern || '1+0+1';
     const patientPhone = reminder?.patient?.user?.phone || '8801700000000';
     const patientName = reminder?.patient?.user?.name || undefined;
 
     // 1) Trigger Web Push Notification via webpush using stored VAPID keys with custom alarm sound tag
-    const pushResult = await this.webPushService.sendAlarmNotification(patientId, {
-      reminderId,
+    const pushResult = await this.webPushService.sendAlarmNotification(
       patientId,
-      medicineName,
-      schedulePattern,
-      intakeTime: job.data.intakeTime,
-    });
+      {
+        reminderId,
+        patientId,
+        medicineName,
+        schedulePattern,
+        intakeTime: job.data.intakeTime,
+      },
+    );
 
     // 2) Synthesize Bengali audio clip, send WhatsApp voice note & trigger IVR call for critical dosages
     let audioReminderResult: any = null;
     try {
-      audioReminderResult = await this.audioReminderService.processAudioReminder({
-        reminderId,
-        patientId,
-        medicineName,
-        genericName,
-        diagnosis,
-        patientPhone,
-        patientName,
-        preferredLanguage: 'bn',
-        schedulePattern,
-      });
+      audioReminderResult =
+        await this.audioReminderService.processAudioReminder({
+          reminderId,
+          patientId,
+          medicineName,
+          genericName,
+          diagnosis,
+          patientPhone,
+          patientName,
+          preferredLanguage: 'bn',
+          schedulePattern,
+        });
     } catch (err: any) {
-      this.logger.warn(`Failed to process audio reminder for ${reminderId}: ${err.message}`);
+      this.logger.warn(
+        `Failed to process audio reminder for ${reminderId}: ${err.message}`,
+      );
     }
 
     // 3) Schedule fallback job in 15 minutes to check if still unacknowledged
-    await this.remindersQueueService.addFallbackCheckJob(job.data, 15 * 60 * 1000);
+    await this.remindersQueueService.addFallbackCheckJob(
+      job.data,
+      15 * 60 * 1000,
+    );
 
     return {
       status: 'ALARM_PUSH_SENT',
@@ -245,15 +254,17 @@ export class RemindersProcessor extends WorkerHost {
     if (reminder.status === ReminderStatus.PENDING) {
       const patientName = reminder.patient?.user?.name || 'Patient';
       const patientPhone = reminder.patient?.user?.phone || '8801700000000';
-      const medicineName = reminder.prescriptionItem?.medicineName || 'Prescribed Medicine';
+      const medicineName =
+        reminder.prescriptionItem?.medicineName || 'Prescribed Medicine';
 
-      const whatsappResult = await this.whatsAppService.sendFallbackTemplateMessage({
-        reminderId,
-        patientName,
-        patientPhone,
-        medicineName,
-        intakeTime: reminder.intakeTime,
-      });
+      const whatsappResult =
+        await this.whatsAppService.sendFallbackTemplateMessage({
+          reminderId,
+          patientName,
+          patientPhone,
+          medicineName,
+          intakeTime: reminder.intakeTime,
+        });
 
       this.logger.log(
         `Triggered WhatsApp fallback message for unacknowledged reminder ${reminderId}`,

@@ -71,7 +71,8 @@ export class RemindersController {
   @Roles(Role.PATIENT, Role.DOCTOR, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get patient medication adherence percentage and compliance report',
+    summary:
+      'Get patient medication adherence percentage and compliance report',
     description:
       'Calculates adherence percentage (Doses Taken on Time / Total Prescribed Doses). If adherence falls below 70%, triggers automated push reminder to patient and flags an adherence alert on doctor upcoming follow-up appointment view.',
   })
@@ -80,4 +81,3 @@ export class RemindersController {
     return this.dosageParserService.getPatientCompliance(patientId);
   }
 }
-

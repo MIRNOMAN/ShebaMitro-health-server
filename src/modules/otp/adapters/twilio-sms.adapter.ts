@@ -13,7 +13,9 @@ export class TwilioSmsAdapter implements SmsAdapter {
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
     const fromPhone = this.configService.get<string>('TWILIO_FROM_PHONE');
 
-    this.logger.log(`[Twilio SMS] Sending OTP SMS to ${to}: "${message}" (AccountSID: ${accountSid || 'mock'})`);
+    this.logger.log(
+      `[Twilio SMS] Sending OTP SMS to ${to}: "${message}" (AccountSID: ${accountSid || 'mock'})`,
+    );
     return true;
   }
 }

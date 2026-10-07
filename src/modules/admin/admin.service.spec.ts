@@ -85,15 +85,21 @@ describe('AdminService', () => {
         })),
       },
       user: {
-        update: jest.fn().mockResolvedValue({ id: 'user-doc-123', isVerified: true }),
+        update: jest
+          .fn()
+          .mockResolvedValue({ id: 'user-doc-123', isVerified: true }),
       },
       labProfile: {
         findMany: jest.fn().mockResolvedValue([mockLabProfile]),
       },
       wallet: {
-        findMany: jest.fn().mockResolvedValue([mockWalletDoctor, mockWalletLab]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([mockWalletDoctor, mockWalletLab]),
         findUnique: jest.fn().mockResolvedValue(mockWalletDoctor),
-        create: jest.fn().mockImplementation(({ data }) => ({ id: 'w-new', ...data })),
+        create: jest
+          .fn()
+          .mockImplementation(({ data }) => ({ id: 'w-new', ...data })),
         update: jest.fn().mockImplementation(({ data }) => ({
           ...mockWalletDoctor,
           balance: mockWalletDoctor.balance - (data.balance?.decrement || 0),
@@ -115,10 +121,7 @@ describe('AdminService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AdminService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [AdminService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<AdminService>(AdminService);
@@ -133,13 +136,19 @@ describe('AdminService', () => {
       const result = await service.getVerifications({ page: 1, limit: 10 });
       expect(result.data.length).toBe(1);
       expect(result.data[0].bmdcRegNo).toBe('BMDC-A-98765');
-      expect(result.data[0].bmdcDocUrl).toBe('https://s3.amazonaws.com/bmdc/98765.pdf');
+      expect(result.data[0].bmdcDocUrl).toBe(
+        'https://s3.amazonaws.com/bmdc/98765.pdf',
+      );
       expect(result.data[0].isApproved).toBe(false);
       expect(result.meta.total).toBe(1);
     });
 
     it('should apply search filter if search term provided', async () => {
-      await service.getVerifications({ page: 1, limit: 10, search: 'Karimgonj' });
+      await service.getVerifications({
+        page: 1,
+        limit: 10,
+        search: 'Karimgonj',
+      });
       expect(prisma.doctorProfile.findMany).toHaveBeenCalled();
     });
   });
@@ -242,13 +251,15 @@ describe('AdminService', () => {
 
       expect(result.successfulCount).toBe(0);
       expect(result.failedCount).toBe(1);
-      expect(result.failures[0].reason).toContain('Insufficient wallet balance');
+      expect(result.failures[0].reason).toContain(
+        'Insufficient wallet balance',
+      );
     });
 
     it('should throw BadRequestException if payout list is empty', async () => {
-      await expect(service.executePayouts({ payouts: [] }, 'admin-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.executePayouts({ payouts: [] }, 'admin-1'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

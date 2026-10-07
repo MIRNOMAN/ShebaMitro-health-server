@@ -12,7 +12,9 @@ export class InfobipSmsAdapter implements SmsAdapter {
     const apiKey = this.configService.get<string>('INFOBIP_API_KEY');
     const baseUrl = this.configService.get<string>('INFOBIP_BASE_URL');
 
-    this.logger.log(`[Infobip SMS] Sending OTP SMS to ${to}: "${message}" via ${baseUrl || 'api.infobip.com'}`);
+    this.logger.log(
+      `[Infobip SMS] Sending OTP SMS to ${to}: "${message}" via ${baseUrl || 'api.infobip.com'}`,
+    );
     return true;
   }
 }

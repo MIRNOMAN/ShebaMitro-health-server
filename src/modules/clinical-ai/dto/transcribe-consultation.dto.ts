@@ -27,7 +27,8 @@ export class TranscribeConsultationDto {
   audioBase64?: string;
 
   @ApiPropertyOptional({
-    description: 'Existing raw consultation transcript text (if pre-transcribed on client)',
+    description:
+      'Existing raw consultation transcript text (if pre-transcribed on client)',
     example: 'Patient reports severe headache and fever for 2 days...',
   })
   @IsOptional()

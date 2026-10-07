@@ -27,7 +27,10 @@ describe('VitalsSyncService', () => {
     prisma = {
       patientProfile: {
         findUnique: jest.fn().mockImplementation(({ where }) => {
-          if (where.id === 'patient-profile-100' || where.userId === 'user-patient-100') {
+          if (
+            where.id === 'patient-profile-100' ||
+            where.userId === 'user-patient-100'
+          ) {
             return Promise.resolve(mockPatientProfile);
           }
           return Promise.resolve(null);
@@ -106,7 +109,11 @@ describe('VitalsSyncService', () => {
         ],
       };
 
-      const result = await service.syncVitals('user-patient-100', Role.PATIENT, dto);
+      const result = await service.syncVitals(
+        'user-patient-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.success).toBe(true);
       expect(result.syncedCount).toBe(2);
@@ -129,7 +136,11 @@ describe('VitalsSyncService', () => {
         ],
       };
 
-      const result = await service.syncVitals('user-patient-100', Role.PATIENT, dto);
+      const result = await service.syncVitals(
+        'user-patient-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.success).toBe(true);
       expect(result.alertsTriggeredCount).toBe(1);
@@ -167,7 +178,11 @@ describe('VitalsSyncService', () => {
         ],
       };
 
-      const result = await service.syncVitals('user-patient-100', Role.PATIENT, dto);
+      const result = await service.syncVitals(
+        'user-patient-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.success).toBe(true);
       expect(result.alertsTriggeredCount).toBe(1);
@@ -217,7 +232,11 @@ describe('VitalsSyncService', () => {
         ],
       };
 
-      const result = await service.syncVitals('user-patient-100', Role.PATIENT, dto);
+      const result = await service.syncVitals(
+        'user-patient-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.skippedDuplicateCount).toBe(1);
       expect(result.syncedCount).toBe(0);

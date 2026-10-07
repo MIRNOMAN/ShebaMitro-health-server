@@ -79,7 +79,12 @@ describe('VitalsSyncController', () => {
         },
       ];
 
-      await controller.syncVitals('user-123', Role.PATIENT, arrayBody, undefined);
+      await controller.syncVitals(
+        'user-123',
+        Role.PATIENT,
+        arrayBody,
+        undefined,
+      );
 
       expect(service.syncVitals).toHaveBeenCalledWith(
         'user-123',

@@ -30,12 +30,16 @@ export class PharmacyController {
     private readonly chronicRefillService: ChronicRefillService,
   ) {}
 
-  @Throttle({ default: { limit: 5, ttl: 60000 }, checkout: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    checkout: { limit: 5, ttl: 60000 },
+  })
   @Post('orders')
   @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Convert verified prescription items into a pharmacy cart order (Rate limited: 5 req/min)',
+    summary:
+      'Convert verified prescription items into a pharmacy cart order (Rate limited: 5 req/min)',
     description:
       'Converts prescribed medication items from a verified medical prescription into an actionable pharmacy cart order for delivery.',
   })
@@ -47,12 +51,16 @@ export class PharmacyController {
     return this.pharmacyService.createCartOrder(userId, dto);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 }, checkout: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    checkout: { limit: 5, ttl: 60000 },
+  })
   @Post('refill-order')
   @Roles(Role.PATIENT, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: '1-click chronic medicine refill re-order (Rate limited: 5 req/min)',
+    summary:
+      '1-click chronic medicine refill re-order (Rate limited: 5 req/min)',
     description:
       'Automatically provisions a refill order with patient preferred partner pharmacy, computes standard maintenance quantity and delivery fee, and schedules the next cycle reminder.',
   })
@@ -68,11 +76,14 @@ export class PharmacyController {
   @Roles(Role.PHARMACY, Role.ADMIN, Role.DOCTOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Verify prescription QR code signature and dispense medication (Pharmacist)',
+    summary:
+      'Verify prescription QR code signature and dispense medication (Pharmacist)',
     description:
       'Verifies doctor digital signature legitimacy, checks previous dispense history to prevent duplicate dispensing of controlled substances/narcotics, and updates prescription status to DISPENSED upon checkout.',
   })
-  @ResponseMessage('Prescription QR code verified and marked DISPENSED upon checkout')
+  @ResponseMessage(
+    'Prescription QR code verified and marked DISPENSED upon checkout',
+  )
   async verifyQrAndDispense(
     @Param('hash') hash: string,
     @CurrentUser('id') userId?: string,

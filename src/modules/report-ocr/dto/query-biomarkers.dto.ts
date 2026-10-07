@@ -5,7 +5,8 @@ import { Type } from 'class-transformer';
 export class QueryBiomarkersDto {
   @ApiPropertyOptional({
     example: 'hba1c',
-    description: 'Filter by biomarker key (e.g. hba1c, cholesterol, hdl, ldl, triglycerides, hemoglobin, wbc, platelets)',
+    description:
+      'Filter by biomarker key (e.g. hba1c, cholesterol, hdl, ldl, triglycerides, hemoglobin, wbc, platelets)',
   })
   @IsOptional()
   @IsString()
@@ -19,7 +20,10 @@ export class QueryBiomarkersDto {
   @IsString()
   testType?: string;
 
-  @ApiPropertyOptional({ default: 50, description: 'Max number of data points' })
+  @ApiPropertyOptional({
+    default: 50,
+    description: 'Max number of data points',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

@@ -57,16 +57,24 @@ export class ChronicRefillService {
    * Check if a prescription item qualifies as chronic maintenance therapy:
    * isChronic: true OR durationDays >= 30
    */
-  isChronicEligible(item: { isChronic?: boolean; durationDays?: number }): boolean {
+  isChronicEligible(item: {
+    isChronic?: boolean;
+    durationDays?: number;
+  }): boolean {
     if (!item) return false;
-    return Boolean(item.isChronic === true || (item.durationDays && item.durationDays >= 30));
+    return Boolean(
+      item.isChronic === true || (item.durationDays && item.durationDays >= 30),
+    );
   }
 
   /**
    * Calculate exact medicine depletion date: startDate + durationDays (in ms)
    */
   calculateDepletionDate(startDate: Date, durationDays: number): Date {
-    const baseTime = startDate instanceof Date ? startDate.getTime() : new Date(startDate).getTime();
+    const baseTime =
+      startDate instanceof Date
+        ? startDate.getTime()
+        : new Date(startDate).getTime();
     const durationMs = durationDays * 24 * 60 * 60 * 1000;
     return new Date(baseTime + durationMs);
   }
@@ -74,8 +82,14 @@ export class ChronicRefillService {
   /**
    * Calculate BullMQ reminder schedule time: 72 hours (3 days) prior to depletion date
    */
-  calculateReminderScheduleTime(depletionDate: Date, leadTimeHours: number = 72): Date {
-    const depletionTime = depletionDate instanceof Date ? depletionDate.getTime() : new Date(depletionDate).getTime();
+  calculateReminderScheduleTime(
+    depletionDate: Date,
+    leadTimeHours: number = 72,
+  ): Date {
+    const depletionTime =
+      depletionDate instanceof Date
+        ? depletionDate.getTime()
+        : new Date(depletionDate).getTime();
     const leadTimeMs = leadTimeHours * 60 * 60 * 1000;
     return new Date(depletionTime - leadTimeMs);
   }
@@ -83,7 +97,9 @@ export class ChronicRefillService {
   /**
    * Schedule a BullMQ job 72 hours prior to medicine depletion
    */
-  async scheduleChronicRefillJob(payload: ChronicRefillJobPayload): Promise<Job> {
+  async scheduleChronicRefillJob(
+    payload: ChronicRefillJobPayload,
+  ): Promise<Job> {
     const reminderTimestamp = new Date(payload.scheduledReminderTime).getTime();
     const delay = Math.max(0, reminderTimestamp - Date.now());
     const jobId = `chronic-refill-${payload.prescriptionId}-${payload.prescriptionItemId}`;
@@ -95,7 +111,9 @@ export class ChronicRefillService {
         await existingJob.remove();
       }
     } catch (err: any) {
-      this.logger.warn(`Could not remove existing BullMQ job ${jobId}: ${err.message}`);
+      this.logger.warn(
+        `Could not remove existing BullMQ job ${jobId}: ${err.message}`,
+      );
     }
 
     const job = await this.refillQueue.add(
@@ -139,20 +157,34 @@ export class ChronicRefillService {
       });
 
       if (!prescription) {
-        throw new NotFoundException(`Prescription with ID ${prescriptionId} not found`);
+        throw new NotFoundException(
+          `Prescription with ID ${prescriptionId} not found`,
+        );
       }
 
       items = prescription.items || [];
     }
 
-    const patientId = prescription?.patientId || items[0]?.prescription?.patientId || items[0]?.patientId;
+    const patientId =
+      prescription?.patientId ||
+      items[0]?.prescription?.patientId ||
+      items[0]?.patientId;
     const scheduledResults: RefillScheduleResult[] = [];
 
     for (const item of items) {
       if (this.isChronicEligible(item)) {
-        const depletionDate = this.calculateDepletionDate(startDate, item.durationDays);
-        const scheduledReminderTime = this.calculateReminderScheduleTime(depletionDate, 72);
-        const delayMs = Math.max(0, scheduledReminderTime.getTime() - Date.now());
+        const depletionDate = this.calculateDepletionDate(
+          startDate,
+          item.durationDays,
+        );
+        const scheduledReminderTime = this.calculateReminderScheduleTime(
+          depletionDate,
+          72,
+        );
+        const delayMs = Math.max(
+          0,
+          scheduledReminderTime.getTime() - Date.now(),
+        );
         const reorderUrl = `/api/v1/pharmacy/refill-order?prescriptionId=${prescriptionId}&prescriptionItemId=${item.id}`;
 
         const payload: ChronicRefillJobPayload = {
@@ -221,7 +253,10 @@ export class ChronicRefillService {
    * 2. Otherwise, check patient's previous PharmacyOrders to find preferred pharmacy.
    * 3. Otherwise, pick first active partner pharmacy with deliveryAvailable: true.
    */
-  async resolvePreferredPharmacy(patientId: string, preferredPharmacyId?: string) {
+  async resolvePreferredPharmacy(
+    patientId: string,
+    preferredPharmacyId?: string,
+  ) {
     if (preferredPharmacyId) {
       const pharmacy = await this.prisma.pharmacyProfile.findUnique({
         where: { id: preferredPharmacyId },
@@ -260,7 +295,9 @@ export class ChronicRefillService {
     });
 
     if (!anyPharmacy) {
-      throw new NotFoundException('No active partner pharmacy found in the system to provision order');
+      throw new NotFoundException(
+        'No active partner pharmacy found in the system to provision order',
+      );
     }
 
     return anyPharmacy;
@@ -272,7 +309,10 @@ export class ChronicRefillService {
    * 2. Patient's previous PharmacyOrder address
    * 3. Default fallback address
    */
-  async resolveShippingAddress(patientId: string, providedAddress?: string): Promise<string> {
+  async resolveShippingAddress(
+    patientId: string,
+    providedAddress?: string,
+  ): Promise<string> {
     if (providedAddress && providedAddress.trim().length > 0) {
       return providedAddress.trim();
     }
@@ -297,11 +337,15 @@ export class ChronicRefillService {
     // 1. Fetch Patient Profile
     const patientProfile = await this.prisma.patientProfile.findUnique({
       where: { userId },
-      include: { user: { select: { id: true, name: true, phone: true, email: true } } },
+      include: {
+        user: { select: { id: true, name: true, phone: true, email: true } },
+      },
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     // 2. Fetch Prescription
@@ -309,23 +353,31 @@ export class ChronicRefillService {
       where: { id: dto.prescriptionId },
       include: {
         items: true,
-        doctor: { select: { name: true, specialization: true, bmdcRegNo: true } },
+        doctor: {
+          select: { name: true, specialization: true, bmdcRegNo: true },
+        },
       },
     });
 
     if (!prescription) {
-      throw new NotFoundException(`Prescription with ID ${dto.prescriptionId} not found`);
+      throw new NotFoundException(
+        `Prescription with ID ${dto.prescriptionId} not found`,
+      );
     }
 
     if (prescription.patientId !== patientProfile.id) {
-      throw new ForbiddenException('Access denied. You do not own this prescription.');
+      throw new ForbiddenException(
+        'Access denied. You do not own this prescription.',
+      );
     }
 
     // 3. Filter target prescription items to refill
     let refillItems = prescription.items;
 
     if (dto.prescriptionItemId) {
-      refillItems = prescription.items.filter((item) => item.id === dto.prescriptionItemId);
+      refillItems = prescription.items.filter(
+        (item) => item.id === dto.prescriptionItemId,
+      );
     } else if (dto.selectedItemIds && dto.selectedItemIds.length > 0) {
       refillItems = prescription.items.filter((item) =>
         dto.selectedItemIds!.includes(item.id),
@@ -333,7 +385,9 @@ export class ChronicRefillService {
     }
 
     if (refillItems.length === 0) {
-      throw new BadRequestException('No matching prescription items found to refill');
+      throw new BadRequestException(
+        'No matching prescription items found to refill',
+      );
     }
 
     // 4. Resolve Preferred Partner Pharmacy & Shipping Address
@@ -353,11 +407,13 @@ export class ChronicRefillService {
       const dosesPerDay = item.schedulePattern
         ? item.schedulePattern
             .split(/[\+\-,\/]/)
-            .reduce((acc, curr) => acc + (parseInt(curr.trim(), 10) || 0), 0) || 2
+            .reduce((acc, curr) => acc + (parseInt(curr.trim(), 10) || 0), 0) ||
+          2
         : 2;
 
       // Refill standard 30-day maintenance pack or item duration
-      const refillDurationDays = item.durationDays >= 30 ? item.durationDays : 30;
+      const refillDurationDays =
+        item.durationDays >= 30 ? item.durationDays : 30;
       const quantity = Math.max(1, dosesPerDay * refillDurationDays);
       const unitPrice = 10; // 10 BDT standard unit price
       const itemTotal = quantity * unitPrice;
@@ -391,11 +447,22 @@ export class ChronicRefillService {
         totalAmount,
         shippingAddress,
         status: PharmacyOrderStatus.PENDING,
-        notes: dto.notes ? `[1-Click Chronic Refill] ${dto.notes}` : '[1-Click Chronic Refill Auto-Provisioned]',
+        notes: dto.notes
+          ? `[1-Click Chronic Refill] ${dto.notes}`
+          : '[1-Click Chronic Refill Auto-Provisioned]',
       },
       include: {
-        pharmacy: { select: { id: true, tradeName: true, address: true, drugLicenseNo: true } },
-        patient: { select: { id: true, user: { select: { name: true, phone: true } } } },
+        pharmacy: {
+          select: {
+            id: true,
+            tradeName: true,
+            address: true,
+            drugLicenseNo: true,
+          },
+        },
+        patient: {
+          select: { id: true, user: { select: { name: true, phone: true } } },
+        },
       },
     });
 
@@ -407,8 +474,14 @@ export class ChronicRefillService {
     const refillStartDate = new Date();
     for (const item of refillItems) {
       const nextDuration = item.durationDays >= 30 ? item.durationDays : 30;
-      const nextDepletionDate = this.calculateDepletionDate(refillStartDate, nextDuration);
-      const nextReminderTime = this.calculateReminderScheduleTime(nextDepletionDate, 72);
+      const nextDepletionDate = this.calculateDepletionDate(
+        refillStartDate,
+        nextDuration,
+      );
+      const nextReminderTime = this.calculateReminderScheduleTime(
+        nextDepletionDate,
+        72,
+      );
 
       await this.scheduleChronicRefillJob({
         prescriptionId: prescription.id,

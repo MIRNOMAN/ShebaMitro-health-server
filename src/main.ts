@@ -30,7 +30,11 @@ async function bootstrap() {
         directives: {
           defaultSrc: [`'self'`],
           scriptSrc: [`'self'`, `'unsafe-inline'`, `'unsafe-eval'`],
-          styleSrc: [`'self'`, `'unsafe-inline'`, 'https://fonts.googleapis.com'],
+          styleSrc: [
+            `'self'`,
+            `'unsafe-inline'`,
+            'https://fonts.googleapis.com',
+          ],
           fontSrc: [`'self'`, 'https://fonts.gstatic.com', 'data:'],
           imgSrc: [`'self'`, 'data:', 'blob:', 'https:'],
           connectSrc: [`'self'`, 'https:', 'wss:', 'ws:'],
@@ -61,7 +65,11 @@ async function bootstrap() {
   // ── Strict CORS Configuration ───────────────────────────────
   const allowedOrigins =
     corsOrigin === '*'
-      ? ['http://localhost:3000', 'http://localhost:5173', 'https://shebamitro.health']
+      ? [
+          'http://localhost:3000',
+          'http://localhost:5173',
+          'https://shebamitro.health',
+        ]
       : corsOrigin.split(',').map((o) => o.trim());
 
   app.enableCors({
@@ -72,7 +80,9 @@ async function bootstrap() {
       if (!origin || corsOrigin === '*' || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`Origin ${origin} not allowed by strict CORS policy`));
+        callback(
+          new Error(`Origin ${origin} not allowed by strict CORS policy`),
+        );
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -118,7 +128,9 @@ async function bootstrap() {
 
   // ── Swagger / OpenAPI Documentation at /docs ─────────────────
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('ShebaMitro Health - Institutional Digital Healthcare Platform API')
+    .setTitle(
+      'ShebaMitro Health - Institutional Digital Healthcare Platform API',
+    )
     .setDescription(
       'Enterprise-grade Healthcare REST API compliant with HIPAA/GDPR PHI privacy principles, featuring End-to-End Telemedicine, Digital Prescriptions, AI Clinical Scribing, Chronic Refill Automation, and IoT Vitals Synchronization.',
     )
@@ -134,24 +146,78 @@ async function bootstrap() {
       },
       'BearerAuth',
     )
-    .addTag('Auth', 'Authentication, User Registration, Session Management, and Role Validation')
-    .addTag('Doctors', 'Doctor Profiles, Chamber Availabilities, and Verification Status')
-    .addTag('Appointments', 'Consultation Bookings, Chamber Slots, and Status Workflows')
-    .addTag('Chat', 'Real-time Encrypted Doctor-Patient Messaging and Medical Attachments')
-    .addTag('Alarms', 'Medicine Dosage Schedules, Web Push Alarms, and Compliance Tracking')
-    .addTag('Prescriptions', 'Clinical Finalization, Drug-Drug Safety, and Cryptographic QR Signatures')
-    .addTag('Labs', 'Diagnostic Lab Directory, Home Sample Collection, and Encrypted Reports')
-    .addTag('Refills', 'Chronic Medicine Depletion Automation, 72h Reminders, and 1-Click Refill')
-    .addTag('Pharmacy & Medicine Orders', 'Pharmacy Partner Fulfillment, QR Verification, and Anti-Duplicate Dispense')
-    .addTag('Payments & Billing', 'bKash/Stripe Payment Gateway, Provider Wallets, and Escrow Payouts')
-    .addTag('EHR & Medical Records', 'Electronic Health Records, Chronic Biomarkers, and Timeline History')
-    .addTag('Vitals Sync & Biometrics', 'IoT Bluetooth Vitals Sync and Critical Emergency Alerts')
-    .addTag('Emergency & Ambulance Dispatch', 'Real-time Ambulance GPS Dispatch and Trauma Hospital Routing')
-    .addTag('Family Members', 'Dependent Profiles and Delegated Healthcare Management')
-    .addTag('Clinical AI & Voice Scribe', 'AI Voice Transcription, Clinical Summaries, and ICD-10 Coding')
-    .addTag('Symptom Triage', 'Rule-Based Patient Triage and Urgency Classification')
-    .addTag('Report OCR', 'AWS Textract Lab Report OCR and Biomarker Extraction')
-    .addTag('Admin & Verification', 'Institutional Verification, Provider BMDC Audits, and Compliance Logs')
+    .addTag(
+      'Auth',
+      'Authentication, User Registration, Session Management, and Role Validation',
+    )
+    .addTag(
+      'Doctors',
+      'Doctor Profiles, Chamber Availabilities, and Verification Status',
+    )
+    .addTag(
+      'Appointments',
+      'Consultation Bookings, Chamber Slots, and Status Workflows',
+    )
+    .addTag(
+      'Chat',
+      'Real-time Encrypted Doctor-Patient Messaging and Medical Attachments',
+    )
+    .addTag(
+      'Alarms',
+      'Medicine Dosage Schedules, Web Push Alarms, and Compliance Tracking',
+    )
+    .addTag(
+      'Prescriptions',
+      'Clinical Finalization, Drug-Drug Safety, and Cryptographic QR Signatures',
+    )
+    .addTag(
+      'Labs',
+      'Diagnostic Lab Directory, Home Sample Collection, and Encrypted Reports',
+    )
+    .addTag(
+      'Refills',
+      'Chronic Medicine Depletion Automation, 72h Reminders, and 1-Click Refill',
+    )
+    .addTag(
+      'Pharmacy & Medicine Orders',
+      'Pharmacy Partner Fulfillment, QR Verification, and Anti-Duplicate Dispense',
+    )
+    .addTag(
+      'Payments & Billing',
+      'bKash/Stripe Payment Gateway, Provider Wallets, and Escrow Payouts',
+    )
+    .addTag(
+      'EHR & Medical Records',
+      'Electronic Health Records, Chronic Biomarkers, and Timeline History',
+    )
+    .addTag(
+      'Vitals Sync & Biometrics',
+      'IoT Bluetooth Vitals Sync and Critical Emergency Alerts',
+    )
+    .addTag(
+      'Emergency & Ambulance Dispatch',
+      'Real-time Ambulance GPS Dispatch and Trauma Hospital Routing',
+    )
+    .addTag(
+      'Family Members',
+      'Dependent Profiles and Delegated Healthcare Management',
+    )
+    .addTag(
+      'Clinical AI & Voice Scribe',
+      'AI Voice Transcription, Clinical Summaries, and ICD-10 Coding',
+    )
+    .addTag(
+      'Symptom Triage',
+      'Rule-Based Patient Triage and Urgency Classification',
+    )
+    .addTag(
+      'Report OCR',
+      'AWS Textract Lab Report OCR and Biomarker Extraction',
+    )
+    .addTag(
+      'Admin & Verification',
+      'Institutional Verification, Provider BMDC Audits, and Compliance Logs',
+    )
     .addServer(`http://localhost:${port}`, 'Local Development Server')
     .build();
 
@@ -185,10 +251,13 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
   logger.log(`🚀 Production Server running on http://localhost:${port}/api/v1`);
-  logger.log(`📚 Swagger documentation available at http://localhost:${port}/docs`);
-  logger.log(`🔒 Security: Helmet, Strict CORS, Throttler Rate Limiting, and Winston PHI/PII Masking Active`);
+  logger.log(
+    `📚 Swagger documentation available at http://localhost:${port}/docs`,
+  );
+  logger.log(
+    `🔒 Security: Helmet, Strict CORS, Throttler Rate Limiting, and Winston PHI/PII Masking Active`,
+  );
   logger.log(`🌍 Environment: ${nodeEnv}`);
 }
 
 void bootstrap();
-

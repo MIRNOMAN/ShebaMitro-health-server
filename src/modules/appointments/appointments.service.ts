@@ -7,7 +7,11 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { AppointmentStatus, PaymentStatus, AppointmentType } from '@prisma/client';
+import {
+  AppointmentStatus,
+  PaymentStatus,
+  AppointmentType,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RedlockService } from './redlock.service.js';
 import { AppointmentsQueueService } from './appointments-queue.service.js';
@@ -39,7 +43,9 @@ export class AppointmentsService {
     const slotEnd = new Date(dto.slotEndTime);
 
     if (isNaN(slotStart.getTime()) || isNaN(slotEnd.getTime())) {
-      throw new BadRequestException('Invalid slotStartTime or slotEndTime format');
+      throw new BadRequestException(
+        'Invalid slotStartTime or slotEndTime format',
+      );
     }
 
     if (slotEnd <= slotStart) {
@@ -67,7 +73,9 @@ export class AppointmentsService {
         });
 
         if (!doctor || doctor.deletedAt) {
-          throw new NotFoundException(`Doctor with ID ${dto.doctorId} not found`);
+          throw new NotFoundException(
+            `Doctor with ID ${dto.doctorId} not found`,
+          );
         }
 
         // b. Verify Patient profile exists for authenticated user
@@ -165,7 +173,10 @@ export class AppointmentsService {
 
     // 3. Record appointment expiration job in BullMQ (10-minute payment grace period)
     const gracePeriodMs = 10 * 60 * 1000;
-    await this.queueService.addExpirationJob(createdAppointment.id, gracePeriodMs);
+    await this.queueService.addExpirationJob(
+      createdAppointment.id,
+      gracePeriodMs,
+    );
 
     // 4. Emit WebSocket notification for appointment pending creation
     this.gateway.emitAppointmentNotification('APPOINTMENT_PENDING', {
@@ -201,11 +212,15 @@ export class AppointmentsService {
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
     }
 
     if (userId && appointment.patient.userId !== userId) {
-      throw new BadRequestException('You are not authorized to confirm payment for this appointment');
+      throw new BadRequestException(
+        'You are not authorized to confirm payment for this appointment',
+      );
     }
 
     if (appointment.status !== AppointmentStatus.PENDING) {
@@ -239,7 +254,9 @@ export class AppointmentsService {
       slotStartTime: updated.slotStartTime,
     });
 
-    this.logger.log(`Appointment ${appointmentId} confirmed after successful payment`);
+    this.logger.log(
+      `Appointment ${appointmentId} confirmed after successful payment`,
+    );
 
     return updated;
   }
@@ -290,16 +307,27 @@ export class AppointmentsService {
       where: { id: appointmentId },
       include: {
         doctor: {
-          select: { id: true, name: true, specialization: true, consultFee: true },
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            consultFee: true,
+          },
         },
         patient: {
-          select: { id: true, userId: true, user: { select: { name: true, email: true } } },
+          select: {
+            id: true,
+            userId: true,
+            user: { select: { name: true, email: true } },
+          },
         },
       },
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
     }
 
     return appointment;
@@ -314,14 +342,21 @@ export class AppointmentsService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     return this.prisma.appointment.findMany({
       where: { patientId: patientProfile.id },
       include: {
         doctor: {
-          select: { id: true, name: true, specialization: true, consultFee: true },
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            consultFee: true,
+          },
         },
       },
       orderBy: { slotStartTime: 'desc' },

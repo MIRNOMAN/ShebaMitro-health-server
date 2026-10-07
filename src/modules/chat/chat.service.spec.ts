@@ -73,13 +73,19 @@ describe('ChatService', () => {
 
   describe('validateAppointmentAccess', () => {
     it('should grant access to assigned doctor', async () => {
-      const access = await service.validateAppointmentAccess('user-doctor-1', 'appt-123');
+      const access = await service.validateAppointmentAccess(
+        'user-doctor-1',
+        'appt-123',
+      );
       expect(access.isAssignedDoctor).toBe(true);
       expect(access.isAssignedPatient).toBe(false);
     });
 
     it('should grant access to assigned patient', async () => {
-      const access = await service.validateAppointmentAccess('user-patient-1', 'appt-123');
+      const access = await service.validateAppointmentAccess(
+        'user-patient-1',
+        'appt-123',
+      );
       expect(access.isAssignedPatient).toBe(true);
       expect(access.isAssignedDoctor).toBe(false);
     });
@@ -124,7 +130,10 @@ describe('ChatService', () => {
 
   describe('markRoomReadReceipts', () => {
     it('should mark all messages from other user as read', async () => {
-      const result = await service.markRoomReadReceipts('user-patient-1', 'appt-123');
+      const result = await service.markRoomReadReceipts(
+        'user-patient-1',
+        'appt-123',
+      );
 
       expect(prismaService.message.updateMany).toHaveBeenCalledWith({
         where: {

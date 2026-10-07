@@ -29,7 +29,9 @@ export class RedlockService {
         });
         return this.redlock;
       } catch (err: any) {
-        this.logger.warn(`Failed to instantiate Redlock client: ${err.message}`);
+        this.logger.warn(
+          `Failed to instantiate Redlock client: ${err.message}`,
+        );
       }
     }
     return null;
@@ -56,12 +58,16 @@ export class RedlockService {
               await redlock.release(lock);
               this.logger.log(`Released Redlock lock on key: ${lockKey}`);
             } catch (err: any) {
-              this.logger.warn(`Error releasing Redlock lock ${lockKey}: ${err.message}`);
+              this.logger.warn(
+                `Error releasing Redlock lock ${lockKey}: ${err.message}`,
+              );
             }
           },
         };
       } catch (err: any) {
-        this.logger.warn(`Redlock acquisition failed for key ${lockKey}: ${err.message}`);
+        this.logger.warn(
+          `Redlock acquisition failed for key ${lockKey}: ${err.message}`,
+        );
         throw new ConflictException(
           `Slot is currently locked by another booking request. Please try again.`,
         );

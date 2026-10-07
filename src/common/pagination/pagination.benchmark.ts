@@ -28,7 +28,9 @@ export class PaginationBenchmarkService {
    * Benchmark query execution speed: Composite Cursor vs Offset Pagination across 100,000 mock records.
    */
   async runBenchmark(datasetSize = 100000): Promise<BenchmarkMetrics> {
-    this.logger.log(`Starting pagination performance benchmark on dataset size: ${datasetSize}...`);
+    this.logger.log(
+      `Starting pagination performance benchmark on dataset size: ${datasetSize}...`,
+    );
 
     // Generate large synthetic dataset in memory sorted by createdAt desc, id desc
     const baseTime = Date.now();

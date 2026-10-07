@@ -6,7 +6,8 @@ import { CreateVitalDto } from './create-vital.dto.js';
 export class SyncVitalsDto {
   @ApiPropertyOptional({
     example: 'batch-key-998877',
-    description: 'Batch-level idempotency key to prevent duplicate bulk ingestion',
+    description:
+      'Batch-level idempotency key to prevent duplicate bulk ingestion',
   })
   @IsOptional()
   @IsString()

@@ -16,6 +16,11 @@ import { AppointmentsController } from './appointments.controller.js';
     AppointmentsGateway,
     AppointmentsService,
   ],
-  exports: [AppointmentsService, RedlockService, AppointmentsQueueService, AppointmentsGateway],
+  exports: [
+    AppointmentsService,
+    RedlockService,
+    AppointmentsQueueService,
+    AppointmentsGateway,
+  ],
 })
 export class AppointmentsModule {}

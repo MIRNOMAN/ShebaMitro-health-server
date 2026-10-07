@@ -72,7 +72,9 @@ export class ChatGateway
       server.adapter(createAdapter(pubClient, subClient));
       this.logger.log('ChatGateway initialized with Redis adapter');
     } catch (err: any) {
-      this.logger.warn(`Failed to initialize Redis adapter for ChatGateway: ${err.message}`);
+      this.logger.warn(
+        `Failed to initialize Redis adapter for ChatGateway: ${err.message}`,
+      );
     }
   }
 
@@ -92,7 +94,9 @@ export class ChatGateway
           : null);
 
       if (!token) {
-        throw new WsException('Authentication token missing from connection handshake');
+        throw new WsException(
+          'Authentication token missing from connection handshake',
+        );
       }
 
       const secret = this.configService.get<string>('JWT_SECRET');
@@ -108,7 +112,9 @@ export class ChatGateway
         `Socket connected & authenticated: client ID ${client.id}, user ID ${payload.sub}`,
       );
     } catch (err: any) {
-      this.logger.warn(`Socket connection ${client.id} failed JWT auth: ${err.message}`);
+      this.logger.warn(
+        `Socket connection ${client.id} failed JWT auth: ${err.message}`,
+      );
       client.emit('error', { message: 'Unauthorized socket connection' });
       client.disconnect(true);
     }
@@ -124,7 +130,9 @@ export class ChatGateway
   private getAuthenticatedUserId(client: AuthenticatedSocket): string {
     const userId = client.data?.user?.id;
     if (!userId) {
-      throw new WsException('Unauthorized. User session missing from socket connection.');
+      throw new WsException(
+        'Unauthorized. User session missing from socket connection.',
+      );
     }
     return userId;
   }
@@ -147,13 +155,18 @@ export class ChatGateway
     const userId = this.getAuthenticatedUserId(client);
 
     // Ensure only assigned doctor and patient can access the room
-    await this.chatService.validateAppointmentAccess(userId, payload.appointmentId);
+    await this.chatService.validateAppointmentAccess(
+      userId,
+      payload.appointmentId,
+    );
 
     const roomName = this.getRoomName(payload.appointmentId);
     client.join(roomName);
 
     // Fetch conversation history from Message table
-    const messages = await this.chatService.getRoomMessages(payload.appointmentId);
+    const messages = await this.chatService.getRoomMessages(
+      payload.appointmentId,
+    );
 
     this.logger.log(`User ${userId} joined appointment room ${roomName}`);
 
@@ -163,7 +176,10 @@ export class ChatGateway
       messages,
     });
 
-    return { event: 'room-joined', data: { appointmentId: payload.appointmentId, roomName } };
+    return {
+      event: 'room-joined',
+      data: { appointmentId: payload.appointmentId, roomName },
+    };
   }
 
   /**
@@ -177,7 +193,10 @@ export class ChatGateway
     const userId = this.getAuthenticatedUserId(client);
 
     // Ensure only assigned doctor and patient can send messages
-    await this.chatService.validateAppointmentAccess(userId, payload.appointmentId);
+    await this.chatService.validateAppointmentAccess(
+      userId,
+      payload.appointmentId,
+    );
 
     // Save conversation message to database
     const savedMessage = await this.chatService.saveMessage(
@@ -215,7 +234,10 @@ export class ChatGateway
   ) {
     const userId = this.getAuthenticatedUserId(client);
 
-    await this.chatService.validateAppointmentAccess(userId, payload.appointmentId);
+    await this.chatService.validateAppointmentAccess(
+      userId,
+      payload.appointmentId,
+    );
 
     const updated = await this.chatService.markMessageDelivered(
       payload.messageId,
@@ -245,7 +267,10 @@ export class ChatGateway
   ) {
     const userId = this.getAuthenticatedUserId(client);
 
-    await this.chatService.validateAppointmentAccess(userId, payload.appointmentId);
+    await this.chatService.validateAppointmentAccess(
+      userId,
+      payload.appointmentId,
+    );
 
     const roomName = this.getRoomName(payload.appointmentId);
     client.to(roomName).emit('typing-start', {
@@ -264,7 +289,10 @@ export class ChatGateway
   ) {
     const userId = this.getAuthenticatedUserId(client);
 
-    await this.chatService.validateAppointmentAccess(userId, payload.appointmentId);
+    await this.chatService.validateAppointmentAccess(
+      userId,
+      payload.appointmentId,
+    );
 
     const roomName = this.getRoomName(payload.appointmentId);
     client.to(roomName).emit('typing-stop', {
@@ -278,7 +306,9 @@ export class ChatGateway
    */
   broadcastNewMessage(appointmentId: string, message: any) {
     const roomName = this.getRoomName(appointmentId);
-    this.logger.log(`Broadcasting file metadata message over WebSocket room: ${roomName}`);
+    this.logger.log(
+      `Broadcasting file metadata message over WebSocket room: ${roomName}`,
+    );
     if (this.server) {
       this.server.to(roomName).emit('send-message', message);
       this.server.to(roomName).emit('new-message', message);
@@ -288,7 +318,11 @@ export class ChatGateway
   /**
    * Broadcast read-receipts over room:appointment:{id}
    */
-  broadcastReadReceipts(appointmentId: string, readByUserId: string, count: number) {
+  broadcastReadReceipts(
+    appointmentId: string,
+    readByUserId: string,
+    count: number,
+  ) {
     const roomName = this.getRoomName(appointmentId);
     this.logger.log(
       `Broadcasting read-receipts over WebSocket room: ${roomName} (count: ${count})`,

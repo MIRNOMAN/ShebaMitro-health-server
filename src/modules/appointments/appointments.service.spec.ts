@@ -1,6 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { AppointmentStatus, PaymentStatus, AppointmentType } from '@prisma/client';
+import {
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  AppointmentStatus,
+  PaymentStatus,
+  AppointmentType,
+} from '@prisma/client';
 import { AppointmentsService } from './appointments.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RedlockService } from './redlock.service.js';
@@ -140,7 +148,10 @@ describe('AppointmentsService', () => {
       });
 
       // Verify 10-minute payment grace period expiration job scheduled in BullMQ
-      expect(queueService.addExpirationJob).toHaveBeenCalledWith('appt-uuid-1', 600000);
+      expect(queueService.addExpirationJob).toHaveBeenCalledWith(
+        'appt-uuid-1',
+        600000,
+      );
 
       // Verify WebSocket event emitted
       expect(gateway.emitAppointmentNotification).toHaveBeenCalledWith(
@@ -195,7 +206,10 @@ describe('AppointmentsService', () => {
 
   describe('confirmPayment', () => {
     it('should transition status to CONFIRMED, remove BullMQ expiration job and emit WS event', async () => {
-      const result = await service.confirmPayment('appt-uuid-1', 'user-patient-1');
+      const result = await service.confirmPayment(
+        'appt-uuid-1',
+        'user-patient-1',
+      );
 
       expect(prismaService.appointment.update).toHaveBeenCalledWith({
         where: { id: 'appt-uuid-1' },
@@ -206,7 +220,9 @@ describe('AppointmentsService', () => {
         include: expect.any(Object),
       });
 
-      expect(queueService.removeExpirationJob).toHaveBeenCalledWith('appt-uuid-1');
+      expect(queueService.removeExpirationJob).toHaveBeenCalledWith(
+        'appt-uuid-1',
+      );
       expect(gateway.emitAppointmentNotification).toHaveBeenCalledWith(
         'APPOINTMENT_CONFIRMED',
         expect.objectContaining({

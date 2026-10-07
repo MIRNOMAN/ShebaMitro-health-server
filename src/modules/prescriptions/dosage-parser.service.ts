@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ReminderStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RemindersQueueService } from './reminders-queue.service.js';
@@ -52,14 +57,20 @@ export class DosageParserService {
       }
     } else if (parts.length === 4) {
       // 4 times a day: 08:00 AM, 12:00 PM, 05:00 PM, 09:00 PM
-      if (parseInt(parts[0], 10) > 0) slots.push({ hours: 8, minutes: 0, label: 'Morning (08:00 AM)' });
-      if (parseInt(parts[1], 10) > 0) slots.push({ hours: 12, minutes: 0, label: 'Noon (12:00 PM)' });
-      if (parseInt(parts[2], 10) > 0) slots.push({ hours: 17, minutes: 0, label: 'Evening (05:00 PM)' });
-      if (parseInt(parts[3], 10) > 0) slots.push({ hours: 21, minutes: 0, label: 'Night (09:00 PM)' });
+      if (parseInt(parts[0], 10) > 0)
+        slots.push({ hours: 8, minutes: 0, label: 'Morning (08:00 AM)' });
+      if (parseInt(parts[1], 10) > 0)
+        slots.push({ hours: 12, minutes: 0, label: 'Noon (12:00 PM)' });
+      if (parseInt(parts[2], 10) > 0)
+        slots.push({ hours: 17, minutes: 0, label: 'Evening (05:00 PM)' });
+      if (parseInt(parts[3], 10) > 0)
+        slots.push({ hours: 21, minutes: 0, label: 'Night (09:00 PM)' });
     } else if (parts.length === 2) {
       // 2 times a day: 08:30 AM, 08:30 PM
-      if (parseInt(parts[0], 10) > 0) slots.push({ hours: 8, minutes: 30, label: 'Morning (08:30 AM)' });
-      if (parseInt(parts[1], 10) > 0) slots.push({ hours: 20, minutes: 30, label: 'Night (08:30 PM)' });
+      if (parseInt(parts[0], 10) > 0)
+        slots.push({ hours: 8, minutes: 30, label: 'Morning (08:30 AM)' });
+      if (parseInt(parts[1], 10) > 0)
+        slots.push({ hours: 20, minutes: 30, label: 'Night (08:30 PM)' });
     } else {
       // Fallback default: Morning 08:30 AM & Night 09:00 PM
       slots.push({ hours: 8, minutes: 30, label: 'Morning (08:30 AM)' });
@@ -88,10 +99,22 @@ export class DosageParserService {
     for (let dayIndex = 0; dayIndex < durationDays; dayIndex++) {
       for (const slot of slots) {
         // Compute timestamp in patient timezone (adjusting for UTC offset)
-        const scheduledDate = new Date(Date.UTC(baseYear, baseMonth, baseDay + dayIndex, slot.hours, slot.minutes, 0, 0));
+        const scheduledDate = new Date(
+          Date.UTC(
+            baseYear,
+            baseMonth,
+            baseDay + dayIndex,
+            slot.hours,
+            slot.minutes,
+            0,
+            0,
+          ),
+        );
 
         // Adjust for timezone offset (e.g. +6 hours = -360 mins from UTC)
-        scheduledDate.setMinutes(scheduledDate.getMinutes() + timezoneOffsetMinutes);
+        scheduledDate.setMinutes(
+          scheduledDate.getMinutes() + timezoneOffsetMinutes,
+        );
 
         timestamps.push(scheduledDate);
       }
@@ -104,7 +127,13 @@ export class DosageParserService {
    * Parse pattern, bulk insert MedicineReminder records into DB, and schedule delayed BullMQ jobs
    */
   async parseAndScheduleItemReminders(input: ParseAndScheduleInput) {
-    const { patientId, prescriptionItemId, schedulePattern, durationDays, startDate } = input;
+    const {
+      patientId,
+      prescriptionItemId,
+      schedulePattern,
+      durationDays,
+      startDate,
+    } = input;
 
     // 1. Calculate exact dosage timestamps across treatment duration
     const timestamps = this.calculateScheduledTimestamps(
@@ -170,7 +199,9 @@ export class DosageParserService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     const reminder = await this.prisma.medicineReminder.findUnique({
@@ -178,7 +209,9 @@ export class DosageParserService {
     });
 
     if (!reminder) {
-      throw new NotFoundException(`Medicine reminder with ID ${reminderId} not found`);
+      throw new NotFoundException(
+        `Medicine reminder with ID ${reminderId} not found`,
+      );
     }
 
     if (reminder.patientId !== patientProfile.id) {
@@ -201,12 +234,20 @@ export class DosageParserService {
     });
 
     const totalReminders = allReminders.length;
-    const takenCount = allReminders.filter((r) => r.status === ReminderStatus.TAKEN).length;
-    const skippedCount = allReminders.filter((r) => r.status === ReminderStatus.SKIPPED).length;
-    const pendingCount = allReminders.filter((r) => r.status === ReminderStatus.PENDING).length;
+    const takenCount = allReminders.filter(
+      (r) => r.status === ReminderStatus.TAKEN,
+    ).length;
+    const skippedCount = allReminders.filter(
+      (r) => r.status === ReminderStatus.SKIPPED,
+    ).length;
+    const pendingCount = allReminders.filter(
+      (r) => r.status === ReminderStatus.PENDING,
+    ).length;
 
     const complianceRate =
-      totalReminders > 0 ? Number(((takenCount / totalReminders) * 100).toFixed(1)) : 0;
+      totalReminders > 0
+        ? Number(((takenCount / totalReminders) * 100).toFixed(1))
+        : 0;
 
     this.logger.log(
       `Patient ${patientProfile.id} acknowledged reminder ${reminderId} as ${status}. Updated compliance rate: ${complianceRate}%`,
@@ -238,7 +279,9 @@ export class DosageParserService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     const reminder = await this.prisma.medicineReminder.findUnique({
@@ -247,7 +290,9 @@ export class DosageParserService {
     });
 
     if (!reminder) {
-      throw new NotFoundException(`Medicine reminder with ID ${reminderId} not found`);
+      throw new NotFoundException(
+        `Medicine reminder with ID ${reminderId} not found`,
+      );
     }
 
     if (reminder.patientId !== patientProfile.id) {
@@ -305,7 +350,9 @@ export class DosageParserService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile with ID ${patientId} not found`);
+      throw new NotFoundException(
+        `Patient profile with ID ${patientId} not found`,
+      );
     }
 
     const allReminders = await this.prisma.medicineReminder.findMany({
@@ -348,7 +395,9 @@ export class DosageParserService {
         });
         pushNotificationSent = true;
       } catch (err: any) {
-        this.logger.warn(`Failed to dispatch low adherence push notification: ${err.message}`);
+        this.logger.warn(
+          `Failed to dispatch low adherence push notification: ${err.message}`,
+        );
       }
 
       // 2) Flag adherence alert on doctor's upcoming follow-up appointment view
@@ -396,4 +445,3 @@ export class DosageParserService {
     };
   }
 }
-

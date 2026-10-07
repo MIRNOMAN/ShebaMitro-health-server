@@ -48,7 +48,8 @@ export class DrugSafetyService {
       severity: 'SEVERE',
       description:
         'Potentially fatal interaction: Co-administration with Nitrates causes severe unmanageable systemic hypotension.',
-      recommendation: 'Absolute contraindication. Do not co-prescribe PDE5 inhibitors with nitrates.',
+      recommendation:
+        'Absolute contraindication. Do not co-prescribe PDE5 inhibitors with nitrates.',
     },
     {
       drugA: ['clopidogrel', 'plavix'],
@@ -62,21 +63,25 @@ export class DrugSafetyService {
       drugA: ['enalapril', 'lisinopril', 'losartan'],
       drugB: ['potassium', 'spironolactone'],
       severity: 'SEVERE',
-      description: 'High risk of hyperkalemia leading to fatal cardiac arrhythmias.',
+      description:
+        'High risk of hyperkalemia leading to fatal cardiac arrhythmias.',
       recommendation: 'Monitor serum potassium levels regularly.',
     },
     {
       drugA: ['methotrexate'],
       drugB: ['ibuprofen', 'naproxen', 'diclofenac'],
       severity: 'SEVERE',
-      description: 'NSAIDs impair renal clearance of Methotrexate leading to severe bone marrow toxicity.',
-      recommendation: 'Avoid concurrent use of NSAIDs with high-dose Methotrexate.',
+      description:
+        'NSAIDs impair renal clearance of Methotrexate leading to severe bone marrow toxicity.',
+      recommendation:
+        'Avoid concurrent use of NSAIDs with high-dose Methotrexate.',
     },
     {
       drugA: ['paracetamol', 'acetaminophen'],
       drugB: ['alcohol'],
       severity: 'MODERATE',
-      description: 'Moderate interaction: Increased hepatotoxicity risk with prolonged high dosing.',
+      description:
+        'Moderate interaction: Increased hepatotoxicity risk with prolonged high dosing.',
       recommendation: 'Limit total daily dosage to under 3g.',
     },
     {
@@ -85,7 +90,8 @@ export class DrugSafetyService {
       severity: 'MODERATE',
       description:
         'Competitive inhibition of platelet COX-1; Ibuprofen interferes with low-dose Aspirin cardio-protection.',
-      recommendation: 'Take Aspirin at least 30 minutes before or 8 hours after Ibuprofen.',
+      recommendation:
+        'Take Aspirin at least 30 minutes before or 8 hours after Ibuprofen.',
     },
   ];
 
@@ -130,7 +136,8 @@ export class DrugSafetyService {
         if (
           medName.includes(allergyLower) ||
           allergyLower.includes(medName) ||
-          (genName && (genName.includes(allergyLower) || allergyLower.includes(genName)))
+          (genName &&
+            (genName.includes(allergyLower) || allergyLower.includes(genName)))
         ) {
           conflicts.push({
             type: 'ALLERGY_CONFLICT',
@@ -147,8 +154,16 @@ export class DrugSafetyService {
     // 3. Cross-reference prescribed medications against Drug-Drug Interaction rules
     for (let i = 0; i < meds.length; i++) {
       for (let j = i + 1; j < meds.length; j++) {
-        const nameA = (meds[i].medicineName + ' ' + (meds[i].genericName || '')).toLowerCase();
-        const nameB = (meds[j].medicineName + ' ' + (meds[j].genericName || '')).toLowerCase();
+        const nameA = (
+          meds[i].medicineName +
+          ' ' +
+          (meds[i].genericName || '')
+        ).toLowerCase();
+        const nameB = (
+          meds[j].medicineName +
+          ' ' +
+          (meds[j].genericName || '')
+        ).toLowerCase();
 
         for (const rule of this.interactionRules) {
           const matchAInRuleA = rule.drugA.some((d) => nameA.includes(d));
@@ -157,7 +172,10 @@ export class DrugSafetyService {
           const matchBInRuleA = rule.drugA.some((d) => nameB.includes(d));
           const matchAInRuleB = rule.drugB.some((d) => nameA.includes(d));
 
-          if ((matchAInRuleA && matchBInRuleB) || (matchBInRuleA && matchAInRuleB)) {
+          if (
+            (matchAInRuleA && matchBInRuleB) ||
+            (matchBInRuleA && matchAInRuleB)
+          ) {
             conflicts.push({
               type: 'DRUG_DRUG_INTERACTION',
               medicationA: meds[i].medicineName,

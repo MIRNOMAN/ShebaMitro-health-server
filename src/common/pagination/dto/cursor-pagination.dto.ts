@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -16,7 +23,10 @@ export class CursorPaginationDto {
   @IsString()
   cursor?: string;
 
-  @ApiPropertyOptional({ default: 10, description: 'Number of items to fetch per page' })
+  @ApiPropertyOptional({
+    default: 10,
+    description: 'Number of items to fetch per page',
+  })
   @IsOptional()
   @Transform(({ value }) => parseInt(value, 10))
   @IsNumber()

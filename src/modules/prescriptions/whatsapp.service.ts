@@ -20,14 +20,19 @@ export interface WhatsAppChronicRefillInput {
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private readonly metaApiToken = process.env.WHATSAPP_TOKEN || 'EAAG...MOCK_META_TOKEN';
-  private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '100654321098765';
+  private readonly metaApiToken =
+    process.env.WHATSAPP_TOKEN || 'EAAG...MOCK_META_TOKEN';
+  private readonly phoneNumberId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID || '100654321098765';
 
   /**
    * Trigger automated fallback template WhatsApp message via Meta Cloud API
    */
-  async sendFallbackTemplateMessage(input: WhatsAppFallbackMessageInput): Promise<any> {
-    const { patientPhone, patientName, medicineName, intakeTime, reminderId } = input;
+  async sendFallbackTemplateMessage(
+    input: WhatsAppFallbackMessageInput,
+  ): Promise<any> {
+    const { patientPhone, patientName, medicineName, intakeTime, reminderId } =
+      input;
 
     // Standardize phone number for WhatsApp Meta Cloud API (e.g. +8801700000000 -> 8801700000000)
     const cleanPhone = patientPhone.replace(/\D/g, '');
@@ -90,7 +95,9 @@ export class WhatsAppService {
         }
 
         const data = await response.json();
-        this.logger.log(`WhatsApp fallback message sent successfully for reminder ${reminderId}`);
+        this.logger.log(
+          `WhatsApp fallback message sent successfully for reminder ${reminderId}`,
+        );
         return { success: true, data };
       }
     } catch (err: any) {
@@ -111,14 +118,26 @@ export class WhatsAppService {
   /**
    * Dispatch WhatsApp reminder 72 hours prior to chronic medicine depletion with 1-click re-order CTA
    */
-  async sendChronicRefillReminder(input: WhatsAppChronicRefillInput): Promise<any> {
-    const { patientPhone, patientName, medicineName, depletionDate, prescriptionId, reorderUrl } = input;
+  async sendChronicRefillReminder(
+    input: WhatsAppChronicRefillInput,
+  ): Promise<any> {
+    const {
+      patientPhone,
+      patientName,
+      medicineName,
+      depletionDate,
+      prescriptionId,
+      reorderUrl,
+    } = input;
     const cleanPhone = patientPhone.replace(/\D/g, '');
-    const depletionDateStr = new Date(depletionDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const depletionDateStr = new Date(depletionDate).toLocaleDateString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      },
+    );
     const defaultReorderEndpoint = `/api/v1/pharmacy/refill-order?prescriptionId=${prescriptionId}`;
     const actionUrl = reorderUrl || defaultReorderEndpoint;
 
@@ -178,7 +197,9 @@ export class WhatsAppService {
         }
 
         const data = await response.json();
-        this.logger.log(`WhatsApp chronic refill reminder dispatched successfully for prescription ${prescriptionId}`);
+        this.logger.log(
+          `WhatsApp chronic refill reminder dispatched successfully for prescription ${prescriptionId}`,
+        );
         return { success: true, data, actionUrl };
       }
     } catch (err: any) {
@@ -245,7 +266,9 @@ export class WhatsAppService {
         }
 
         const data = await response.json();
-        this.logger.log(`WhatsApp voice note sent successfully to ${cleanPhone}`);
+        this.logger.log(
+          `WhatsApp voice note sent successfully to ${cleanPhone}`,
+        );
         return { success: true, data, audioUrl };
       }
     } catch (err: any) {

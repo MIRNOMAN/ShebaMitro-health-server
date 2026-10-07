@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SymptomTriageController } from './symptom-triage.controller.js';
-import { SymptomTriageService, MANDATORY_MEDICAL_DISCLAIMER } from './symptom-triage.service.js';
+import {
+  SymptomTriageService,
+  MANDATORY_MEDICAL_DISCLAIMER,
+} from './symptom-triage.service.js';
 
 describe('SymptomTriageController', () => {
   let controller: SymptomTriageController;

@@ -37,7 +37,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let title = 'Internal Server Error';
     let detail = 'An unexpected internal server error occurred';
-    let invalidParams: Array<{ field?: string; message: string }> | string[] | undefined = undefined;
+    let invalidParams:
+      Array<{ field?: string; message: string }> | string[] | undefined =
+      undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -47,7 +49,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         detail = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const resObj = exceptionResponse as Record<string, any>;
 
         if (Array.isArray(resObj.message)) {
@@ -85,7 +90,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : undefined,
       );
     } else {
-      this.logger.warn(`${request.method} ${request.url} ${status} - ${detail}`);
+      this.logger.warn(
+        `${request.method} ${request.url} ${status} - ${detail}`,
+      );
     }
 
     response

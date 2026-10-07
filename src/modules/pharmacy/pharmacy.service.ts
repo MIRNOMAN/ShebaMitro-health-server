@@ -42,7 +42,9 @@ export class PharmacyService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     // 2. Verify Pharmacy Profile exists
@@ -51,7 +53,9 @@ export class PharmacyService {
     });
 
     if (!pharmacy) {
-      throw new NotFoundException(`Pharmacy Profile with ID ${dto.pharmacyId} not found`);
+      throw new NotFoundException(
+        `Pharmacy Profile with ID ${dto.pharmacyId} not found`,
+      );
     }
 
     // 3. Fetch Prescription details with items
@@ -64,11 +68,15 @@ export class PharmacyService {
     });
 
     if (!prescription) {
-      throw new NotFoundException(`Prescription with ID ${dto.prescriptionId} not found`);
+      throw new NotFoundException(
+        `Prescription with ID ${dto.prescriptionId} not found`,
+      );
     }
 
     if (prescription.patientId !== patientProfile.id) {
-      throw new ForbiddenException('Access denied. You do not own this prescription.');
+      throw new ForbiddenException(
+        'Access denied. You do not own this prescription.',
+      );
     }
 
     // 4. Select requested prescription items
@@ -80,14 +88,20 @@ export class PharmacyService {
     }
 
     if (targetItems.length === 0) {
-      throw new BadRequestException('No valid prescription items selected for cart order');
+      throw new BadRequestException(
+        'No valid prescription items selected for cart order',
+      );
     }
 
     // 5. Convert prescription items into cart order items & calculate pricing
     let totalAmount = 0;
     const cartItems = targetItems.map((item) => {
       // Calculate quantity based on schedule pattern and duration (default ~2 doses/day * days)
-      const dosesPerDay = item.schedulePattern ? item.schedulePattern.split('+').reduce((acc, curr) => acc + parseInt(curr || '0', 10), 0) || 2 : 2;
+      const dosesPerDay = item.schedulePattern
+        ? item.schedulePattern
+            .split('+')
+            .reduce((acc, curr) => acc + parseInt(curr || '0', 10), 0) || 2
+        : 2;
       const quantity = Math.max(1, dosesPerDay * item.durationDays);
       const unitPrice = 10; // 10 BDT standard unit price
       const itemTotal = quantity * unitPrice;
@@ -124,7 +138,9 @@ export class PharmacyService {
       },
       include: {
         pharmacy: { select: { id: true, tradeName: true, address: true } },
-        patient: { select: { id: true, user: { select: { name: true, phone: true } } } },
+        patient: {
+          select: { id: true, user: { select: { name: true, phone: true } } },
+        },
       },
     });
 
@@ -169,13 +185,19 @@ export class PharmacyService {
     });
 
     if (!prescription) {
-      throw new NotFoundException(`Prescription not found for QR hash or ID: ${hash}`);
+      throw new NotFoundException(
+        `Prescription not found for QR hash or ID: ${hash}`,
+      );
     }
 
     // 2. Verify Signature Legitimacy
-    const hasValidQrHash = Boolean(prescription.qrCodeHash && prescription.qrCodeHash.length >= 16);
+    const hasValidQrHash = Boolean(
+      prescription.qrCodeHash && prescription.qrCodeHash.length >= 16,
+    );
     const isDoctorLegitimate = Boolean(
-      prescription.doctor && prescription.doctor.bmdcRegNo && prescription.doctor.isApproved !== false,
+      prescription.doctor &&
+      prescription.doctor.bmdcRegNo &&
+      prescription.doctor.isApproved !== false,
     );
 
     if (!hasValidQrHash || !isDoctorLegitimate) {
@@ -192,7 +214,8 @@ export class PharmacyService {
       const medName = (item.medicineName || '').toLowerCase();
       const genName = (item.genericName || '').toLowerCase();
       return CONTROLLED_SUBSTANCES.some(
-        (substance) => medName.includes(substance) || genName.includes(substance),
+        (substance) =>
+          medName.includes(substance) || genName.includes(substance),
       );
     });
 
@@ -242,7 +265,8 @@ export class PharmacyService {
       data: {
         isDispensed: true,
         dispensedAt: prescription.dispensedAt || now,
-        dispensedByPharmacyId: pharmacyProfileId || prescription.dispensedByPharmacyId,
+        dispensedByPharmacyId:
+          pharmacyProfileId || prescription.dispensedByPharmacyId,
       },
     });
 

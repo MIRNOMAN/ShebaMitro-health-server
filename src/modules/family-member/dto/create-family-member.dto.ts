@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsArray, IsDateString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsDateString,
+} from 'class-validator';
 import { FamilyRelation } from '@prisma/client';
 
 export class CreateFamilyMemberDto {
@@ -14,7 +21,8 @@ export class CreateFamilyMemberDto {
   @ApiProperty({
     enum: FamilyRelation,
     example: FamilyRelation.PARENT,
-    description: 'Relationship to primary account holder: PARENT, SPOUSE, CHILD',
+    description:
+      'Relationship to primary account holder: PARENT, SPOUSE, CHILD',
   })
   @IsNotEmpty()
   @IsEnum(FamilyRelation)

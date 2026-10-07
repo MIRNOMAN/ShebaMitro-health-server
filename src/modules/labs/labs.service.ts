@@ -64,8 +64,14 @@ export class LabsService {
 
     if (labAccreditation) {
       where.OR = [
-        { labAccreditation: { contains: labAccreditation, mode: 'insensitive' } },
-        { lab: { accreditation: { contains: labAccreditation, mode: 'insensitive' } } },
+        {
+          labAccreditation: { contains: labAccreditation, mode: 'insensitive' },
+        },
+        {
+          lab: {
+            accreditation: { contains: labAccreditation, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -134,7 +140,9 @@ export class LabsService {
     });
 
     if (!patientProfile) {
-      throw new NotFoundException(`Patient profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Patient profile not found for user ID ${userId}`,
+      );
     }
 
     // 2. Verify Diagnostic Lab Profile
@@ -219,7 +227,9 @@ export class LabsService {
         status: LabOrderStatus.SAMPLE_COLLECTED,
       },
       include: {
-        patient: { select: { id: true, user: { select: { name: true, phone: true } } } },
+        patient: {
+          select: { id: true, user: { select: { name: true, phone: true } } },
+        },
         lab: { select: { id: true, labName: true } },
       },
     });
@@ -249,13 +259,17 @@ export class LabsService {
    */
   async uploadReport(orderId: string, file?: Express.Multer.File) {
     if (!file || !file.buffer) {
-      throw new BadRequestException('A valid PDF report file is required for upload');
+      throw new BadRequestException(
+        'A valid PDF report file is required for upload',
+      );
     }
 
     const order = await this.prisma.labOrder.findUnique({
       where: { id: orderId },
       include: {
-        patient: { select: { id: true, user: { select: { name: true, phone: true } } } },
+        patient: {
+          select: { id: true, user: { select: { name: true, phone: true } } },
+        },
         lab: { select: { id: true, labName: true } },
       },
     });

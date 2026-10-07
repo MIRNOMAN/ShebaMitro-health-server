@@ -65,7 +65,9 @@ export function maskPhone(phone: string): string {
   if (!phone || typeof phone !== 'string') return phone;
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 6) return '[REDACTED_PHONE]';
-  const prefix = phone.startsWith('+') ? '+' + digits.slice(0, 5) : digits.slice(0, 4);
+  const prefix = phone.startsWith('+')
+    ? '+' + digits.slice(0, 5)
+    : digits.slice(0, 4);
   const suffix = digits.slice(-4);
   return `${prefix}****${suffix}`;
 }
@@ -114,7 +116,9 @@ export function maskPhiPii(data: any, depth = 0, maxDepth = 8): any {
       return maskCardNumber(data);
     }
     // Check JWT token
-    if (/^Bearer\s+ey[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(data)) {
+    if (
+      /^Bearer\s+ey[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(data)
+    ) {
       return 'Bearer [REDACTED_JWT_TOKEN]';
     }
     return data;
@@ -126,7 +130,11 @@ export function maskPhiPii(data: any, depth = 0, maxDepth = 8): any {
 
   if (typeof data === 'object') {
     // Do not alter Buffer, Date, Error, etc.
-    if (data instanceof Date || data instanceof RegExp || Buffer.isBuffer(data)) {
+    if (
+      data instanceof Date ||
+      data instanceof RegExp ||
+      Buffer.isBuffer(data)
+    ) {
       return data;
     }
 
@@ -136,7 +144,10 @@ export function maskPhiPii(data: any, depth = 0, maxDepth = 8): any {
       const lowerKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       if (SENSITIVE_KEYS.has(lowerKey)) {
-        if (typeof value === 'string' && (lowerKey.includes('phone') || lowerKey === 'emergencycontact')) {
+        if (
+          typeof value === 'string' &&
+          (lowerKey.includes('phone') || lowerKey === 'emergencycontact')
+        ) {
           maskedObj[key] = maskPhone(value);
         } else if (typeof value === 'string' && lowerKey.includes('email')) {
           maskedObj[key] = maskEmail(value);

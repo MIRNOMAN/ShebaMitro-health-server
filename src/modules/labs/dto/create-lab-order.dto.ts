@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsArray, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  IsOptional,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
 
 export class CreateLabOrderDto {
   @ApiProperty({ description: 'ID of the selected Diagnostic Lab Profile' })
@@ -7,7 +14,9 @@ export class CreateLabOrderDto {
   @IsUUID()
   labId!: string;
 
-  @ApiPropertyOptional({ description: 'Optional Prescription ID linking this lab order' })
+  @ApiPropertyOptional({
+    description: 'Optional Prescription ID linking this lab order',
+  })
   @IsOptional()
   @IsUUID()
   prescriptionId?: string;
@@ -37,7 +46,9 @@ export class CreateLabOrderDto {
   @IsDateString()
   sampleCollectionSlot!: string;
 
-  @ApiPropertyOptional({ description: 'Additional instructions for sample collection' })
+  @ApiPropertyOptional({
+    description: 'Additional instructions for sample collection',
+  })
   @IsOptional()
   @IsString()
   notes?: string;

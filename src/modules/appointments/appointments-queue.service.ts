@@ -11,9 +11,7 @@ import { Queue, Worker, Job } from 'bullmq';
 import { AppointmentsService } from './appointments.service.js';
 
 @Injectable()
-export class AppointmentsQueueService
-  implements OnModuleInit, OnModuleDestroy
-{
+export class AppointmentsQueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AppointmentsQueueService.name);
   private queue: Queue | null = null;
   private worker: Worker | null = null;
@@ -39,7 +37,9 @@ export class AppointmentsQueueService
           this.logger.log(
             `BullMQ Worker processing expiration job for appointment: ${job.data.appointmentId}`,
           );
-          await this.appointmentsService.handleExpiredAppointment(job.data.appointmentId);
+          await this.appointmentsService.handleExpiredAppointment(
+            job.data.appointmentId,
+          );
         },
         { connection },
       );
@@ -50,9 +50,13 @@ export class AppointmentsQueueService
         );
       });
 
-      this.logger.log('BullMQ appointment-expiration queue & worker initialized');
+      this.logger.log(
+        'BullMQ appointment-expiration queue & worker initialized',
+      );
     } catch (err: any) {
-      this.logger.warn(`Failed to initialize BullMQ queue/worker: ${err.message}`);
+      this.logger.warn(
+        `Failed to initialize BullMQ queue/worker: ${err.message}`,
+      );
     }
   }
 
@@ -115,7 +119,9 @@ export class AppointmentsQueueService
         const job = await this.queue.getJob(jobId);
         if (job) {
           await job.remove();
-          this.logger.log(`Removed BullMQ expiration job for appointment ID: ${appointmentId}`);
+          this.logger.log(
+            `Removed BullMQ expiration job for appointment ID: ${appointmentId}`,
+          );
         }
       } catch (err: any) {
         this.logger.warn(
@@ -127,7 +133,9 @@ export class AppointmentsQueueService
     if (this.fallbackTimers.has(appointmentId)) {
       clearTimeout(this.fallbackTimers.get(appointmentId));
       this.fallbackTimers.delete(appointmentId);
-      this.logger.log(`Cleared fallback expiration timer for appointment ID: ${appointmentId}`);
+      this.logger.log(
+        `Cleared fallback expiration timer for appointment ID: ${appointmentId}`,
+      );
     }
   }
 

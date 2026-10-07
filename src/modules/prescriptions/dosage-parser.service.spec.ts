@@ -44,8 +44,12 @@ describe('DosageParserService', () => {
     };
 
     remindersQueueService = {
-      addReminderJob: jest.fn().mockResolvedValue({ id: 'reminder-reminder-db-1' }),
-      snoozeReminderJob: jest.fn().mockResolvedValue({ id: 'reminder-reminder-db-1' }),
+      addReminderJob: jest
+        .fn()
+        .mockResolvedValue({ id: 'reminder-reminder-db-1' }),
+      snoozeReminderJob: jest
+        .fn()
+        .mockResolvedValue({ id: 'reminder-reminder-db-1' }),
     };
 
     webPushService = {
@@ -72,8 +76,16 @@ describe('DosageParserService', () => {
     it('should parse "1+0+1" into Morning (08:30 AM) and Night (09:00 PM)', () => {
       const slots = service.parseSchedulePattern('1+0+1');
       expect(slots.length).toBe(2);
-      expect(slots[0]).toEqual({ hours: 8, minutes: 30, label: 'Morning (08:30 AM)' });
-      expect(slots[1]).toEqual({ hours: 21, minutes: 0, label: 'Night (09:00 PM)' });
+      expect(slots[0]).toEqual({
+        hours: 8,
+        minutes: 30,
+        label: 'Morning (08:30 AM)',
+      });
+      expect(slots[1]).toEqual({
+        hours: 21,
+        minutes: 0,
+        label: 'Night (09:00 PM)',
+      });
     });
 
     it('should parse "1+1+1" into Morning, Afternoon, and Night slots', () => {
@@ -105,7 +117,12 @@ describe('DosageParserService', () => {
     it('should generate correct number of timestamps across durationDays adjusted for timezone offset', () => {
       const startDate = new Date('2026-10-07T00:00:00.000Z');
       // "1+0+1" for 7 days = 14 dosage timestamps
-      const timestamps = service.calculateScheduledTimestamps('1+0+1', 7, -360, startDate);
+      const timestamps = service.calculateScheduledTimestamps(
+        '1+0+1',
+        7,
+        -360,
+        startDate,
+      );
       expect(timestamps.length).toBe(14);
       expect(timestamps[0] instanceof Date).toBe(true);
     });
@@ -194,12 +211,14 @@ describe('DosageParserService', () => {
         intakeTime: new Date(),
         status: ReminderStatus.PENDING,
       });
-      prismaService.medicineReminder.update.mockImplementationOnce(({ data }: any) => ({
-        id: 'rem-123',
-        patientId: 'patient-123',
-        intakeTime: data.intakeTime,
-        status: ReminderStatus.PENDING,
-      }));
+      prismaService.medicineReminder.update.mockImplementationOnce(
+        ({ data }: any) => ({
+          id: 'rem-123',
+          patientId: 'patient-123',
+          intakeTime: data.intakeTime,
+          status: ReminderStatus.PENDING,
+        }),
+      );
 
       const result = await service.snoozeReminder('user-pat-1', 'rem-123', 30);
 

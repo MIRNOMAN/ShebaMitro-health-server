@@ -1,4 +1,11 @@
-import { Injectable, Logger, Inject, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RedisService } from '../../common/redis/redis.service.js';
@@ -32,7 +39,9 @@ export class EmergencyService implements OnModuleInit {
       await this.ensureInitialSeedData();
       await this.syncDatabaseLocationsToRedis();
     } catch (err: any) {
-      this.logger.warn(`EmergencyService initialization sync deferred: ${err.message}`);
+      this.logger.warn(
+        `EmergencyService initialization sync deferred: ${err.message}`,
+      );
     }
   }
 
@@ -49,10 +58,17 @@ export class EmergencyService implements OnModuleInit {
     dto?: CreateSosDto,
   ) {
     if (!dto) {
-      throw new BadRequestException('Latitude and longitude coordinates are required');
+      throw new BadRequestException(
+        'Latitude and longitude coordinates are required',
+      );
     }
 
-    const { latitude, longitude, notes, emergencyContact: customEmergencyContact } = dto;
+    const {
+      latitude,
+      longitude,
+      notes,
+      emergencyContact: customEmergencyContact,
+    } = dto;
 
     // 1. Resolve Patient Profile & Emergency Contact
     let patientProfileId: string | null = null;
@@ -152,12 +168,15 @@ export class EmergencyService implements OnModuleInit {
 
     // 6. Trigger Immediate SMS Alert to Patient Emergency Contacts
     let smsSent = false;
-    const targetSmsNumber = emergencyContactPhone || patientPhone || '+8801700000000';
+    const targetSmsNumber =
+      emergencyContactPhone || patientPhone || '+8801700000000';
     const smsMessage = `🚨 SHEBAMITRO EMERGENCY SOS ALERT! Patient ${patientName || 'Emergency User'} requires urgent assistance. Live GPS Tracking (valid 2h): ${trackingUrl}. Assigned Hospital: ${nearestHospital?.name || 'Nearest ER Facility'}.`;
 
     try {
       smsSent = await this.smsAdapter.sendSms(targetSmsNumber, smsMessage);
-      this.logger.log(`[SMS DISPATCH] Emergency SMS sent to ${targetSmsNumber}: ${smsSent}`);
+      this.logger.log(
+        `[SMS DISPATCH] Emergency SMS sent to ${targetSmsNumber}: ${smsSent}`,
+      );
     } catch (err: any) {
       this.logger.error(`Failed to send emergency SMS alert: ${err.message}`);
     }
@@ -260,7 +279,8 @@ export class EmergencyService implements OnModuleInit {
           const results: GeoSearchResult[] = rawResults.map((item) => {
             // item format: [memberId, distanceStr, [lonStr, latStr]]
             const id = Array.isArray(item) ? item[0] : item;
-            const dist = Array.isArray(item) && item[1] ? parseFloat(item[1]) : 0;
+            const dist =
+              Array.isArray(item) && item[1] ? parseFloat(item[1]) : 0;
             const coords = Array.isArray(item) && item[2] ? item[2] : null;
 
             return {
@@ -274,7 +294,9 @@ export class EmergencyService implements OnModuleInit {
           return results;
         }
       } catch (err: any) {
-        this.logger.warn(`Redis GEOSEARCH failed for ${geoKey}: ${err.message}. Falling back to database geospatial calculation.`);
+        this.logger.warn(
+          `Redis GEOSEARCH failed for ${geoKey}: ${err.message}. Falling back to database geospatial calculation.`,
+        );
       }
     }
 
@@ -298,7 +320,12 @@ export class EmergencyService implements OnModuleInit {
 
       const matched = ambulances
         .map((amb) => {
-          const dist = this.calculateHaversineDistanceKm(lat, lon, amb.latitude, amb.longitude);
+          const dist = this.calculateHaversineDistanceKm(
+            lat,
+            lon,
+            amb.latitude,
+            amb.longitude,
+          );
           return {
             id: amb.id,
             distanceKm: parseFloat(dist.toFixed(2)),
@@ -317,7 +344,12 @@ export class EmergencyService implements OnModuleInit {
 
       const matched = hospitals
         .map((hosp) => {
-          const dist = this.calculateHaversineDistanceKm(lat, lon, hosp.latitude, hosp.longitude);
+          const dist = this.calculateHaversineDistanceKm(
+            lat,
+            lon,
+            hosp.latitude,
+            hosp.longitude,
+          );
           return {
             id: hosp.id,
             distanceKm: parseFloat(dist.toFixed(2)),
@@ -335,7 +367,12 @@ export class EmergencyService implements OnModuleInit {
   /**
    * Haversine formula calculation for distance between two lat/lon coordinates in kilometers
    */
-  private calculateHaversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateHaversineDistanceKm(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371; // Earth's radius in KM
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -357,18 +394,36 @@ export class EmergencyService implements OnModuleInit {
     if (!redis) return;
 
     try {
-      const ambulances = await this.prisma.ambulance.findMany({ where: { isVerified: true } });
+      const ambulances = await this.prisma.ambulance.findMany({
+        where: { isVerified: true },
+      });
       for (const amb of ambulances) {
         // GEOADD key longitude latitude member
-        await redis.call('GEOADD', this.AMBULANCE_GEO_KEY, amb.longitude, amb.latitude, amb.id);
+        await redis.call(
+          'GEOADD',
+          this.AMBULANCE_GEO_KEY,
+          amb.longitude,
+          amb.latitude,
+          amb.id,
+        );
       }
 
-      const hospitals = await this.prisma.hospital.findMany({ where: { isVerified: true } });
+      const hospitals = await this.prisma.hospital.findMany({
+        where: { isVerified: true },
+      });
       for (const hosp of hospitals) {
-        await redis.call('GEOADD', this.HOSPITAL_GEO_KEY, hosp.longitude, hosp.latitude, hosp.id);
+        await redis.call(
+          'GEOADD',
+          this.HOSPITAL_GEO_KEY,
+          hosp.longitude,
+          hosp.latitude,
+          hosp.id,
+        );
       }
 
-      this.logger.log(`Synced ${ambulances.length} ambulances & ${hospitals.length} hospitals to Redis geospatial indexes.`);
+      this.logger.log(
+        `Synced ${ambulances.length} ambulances & ${hospitals.length} hospitals to Redis geospatial indexes.`,
+      );
     } catch (err: any) {
       this.logger.warn(`Failed to sync locations to Redis GEO: ${err.message}`);
     }
@@ -388,7 +443,9 @@ export class EmergencyService implements OnModuleInit {
     });
 
     if (!sos) {
-      throw new NotFoundException('Emergency tracking session not found or expired');
+      throw new NotFoundException(
+        'Emergency tracking session not found or expired',
+      );
     }
 
     const isExpired = new Date() > new Date(sos.trackingExpiresAt);
@@ -434,7 +491,11 @@ export class EmergencyService implements OnModuleInit {
   /**
    * Update ambulance coordinates (syncs DB + Redis GEO)
    */
-  async updateAmbulanceLocation(ambulanceId: string, latitude: number, longitude: number) {
+  async updateAmbulanceLocation(
+    ambulanceId: string,
+    latitude: number,
+    longitude: number,
+  ) {
     const updated = await this.prisma.ambulance.update({
       where: { id: ambulanceId },
       data: { latitude, longitude },
@@ -443,7 +504,13 @@ export class EmergencyService implements OnModuleInit {
     const redis = this.redisService.getRawClient();
     if (redis) {
       try {
-        await redis.call('GEOADD', this.AMBULANCE_GEO_KEY, longitude, latitude, ambulanceId);
+        await redis.call(
+          'GEOADD',
+          this.AMBULANCE_GEO_KEY,
+          longitude,
+          latitude,
+          ambulanceId,
+        );
       } catch (err: any) {
         this.logger.warn(`Redis GEOADD update failed: ${err.message}`);
       }

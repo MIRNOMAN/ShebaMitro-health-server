@@ -20,9 +20,17 @@ declare module 'redlock' {
 
   export default class Redlock extends EventEmitter {
     constructor(clients: Iterable<any>, settings?: Partial<Settings>);
-    acquire(resources: string[], duration: number, settings?: Partial<Settings>): Promise<Lock>;
+    acquire(
+      resources: string[],
+      duration: number,
+      settings?: Partial<Settings>,
+    ): Promise<Lock>;
     release(lock: Lock, settings?: Partial<Settings>): Promise<any>;
-    extend(existing: Lock, duration: number, settings?: Partial<Settings>): Promise<Lock>;
+    extend(
+      existing: Lock,
+      duration: number,
+      settings?: Partial<Settings>,
+    ): Promise<Lock>;
     quit(): Promise<void>;
   }
 }

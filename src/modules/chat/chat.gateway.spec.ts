@@ -56,13 +56,17 @@ describe('ChatGateway', () => {
         query: {},
       },
       data: {
-        user: { id: 'user-patient-1', email: 'patient@example.com', role: 'PATIENT' },
+        user: {
+          id: 'user-patient-1',
+          email: 'patient@example.com',
+          role: 'PATIENT',
+        },
       },
       join: jest.fn(),
       emit: jest.fn(),
       to: jest.fn().mockReturnThis(),
       disconnect: jest.fn(),
-    } as unknown as AuthenticatedSocket;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -138,7 +142,10 @@ describe('ChatGateway', () => {
 
   describe('handleSendMessage', () => {
     it('should validate access, store message in DB and broadcast to room', async () => {
-      const payload = { appointmentId: 'appt-123', content: 'Need medical advice' };
+      const payload = {
+        appointmentId: 'appt-123',
+        content: 'Need medical advice',
+      };
 
       await gateway.handleSendMessage(mockSocket, payload);
 
@@ -159,14 +166,19 @@ describe('ChatGateway', () => {
       );
       expect(mockServer.emit).toHaveBeenCalledWith(
         'message-delivered',
-        expect.objectContaining({ messageId: 'msg-123', appointmentId: 'appt-123' }),
+        expect.objectContaining({
+          messageId: 'msg-123',
+          appointmentId: 'appt-123',
+        }),
       );
     });
   });
 
   describe('handleTypingStart & handleTypingStop', () => {
     it('should broadcast typing-start to room:appointment:{id}', async () => {
-      await gateway.handleTypingStart(mockSocket, { appointmentId: 'appt-123' });
+      await gateway.handleTypingStart(mockSocket, {
+        appointmentId: 'appt-123',
+      });
 
       expect(chatService.validateAppointmentAccess).toHaveBeenCalledWith(
         'user-patient-1',

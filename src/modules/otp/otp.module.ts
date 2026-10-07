@@ -40,7 +40,8 @@ import { MockSmsAdapter } from './adapters/mock-sms.adapter.js';
         sslWireless: SslWirelessSmsAdapter,
         mock: MockSmsAdapter,
       ) => {
-        const provider = configService.get<string>('SMS_PROVIDER')?.toUpperCase() || 'MOCK';
+        const provider =
+          configService.get<string>('SMS_PROVIDER')?.toUpperCase() || 'MOCK';
         switch (provider) {
           case 'TWILIO':
             return twilio;

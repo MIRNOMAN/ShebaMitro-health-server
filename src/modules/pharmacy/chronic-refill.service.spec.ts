@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PharmacyOrderStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { WhatsAppService } from '../prescriptions/whatsapp.service.js';
@@ -122,7 +126,9 @@ describe('ChronicRefillService', () => {
     };
 
     webPushService = {
-      sendChronicRefillNotification: jest.fn().mockResolvedValue({ success: true }),
+      sendChronicRefillNotification: jest
+        .fn()
+        .mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -144,7 +150,9 @@ describe('ChronicRefillService', () => {
 
   describe('isChronicEligible', () => {
     it('should return true if item is marked isChronic: true', () => {
-      expect(service.isChronicEligible({ isChronic: true, durationDays: 14 })).toBe(true);
+      expect(
+        service.isChronicEligible({ isChronic: true, durationDays: 14 }),
+      ).toBe(true);
     });
 
     it('should return true if item durationDays >= 30', () => {
@@ -153,7 +161,9 @@ describe('ChronicRefillService', () => {
     });
 
     it('should return false for acute item with duration < 30 days and no isChronic flag', () => {
-      expect(service.isChronicEligible({ durationDays: 7, isChronic: false })).toBe(false);
+      expect(
+        service.isChronicEligible({ durationDays: 7, isChronic: false }),
+      ).toBe(false);
       expect(service.isChronicEligible({ durationDays: 10 })).toBe(false);
     });
   });
@@ -164,16 +174,23 @@ describe('ChronicRefillService', () => {
       const depletionDate = service.calculateDepletionDate(startDate, 30);
 
       // 30 days = 30 * 24 * 60 * 60 * 1000 = 2592000000 ms
-      expect(depletionDate.getTime()).toBe(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      expect(depletionDate.getTime()).toBe(
+        startDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+      );
       expect(depletionDate.toISOString()).toBe('2026-10-31T00:00:00.000Z');
     });
 
     it('should calculate reminder schedule time exactly 72 hours prior to run out', () => {
       const depletionDate = new Date('2026-10-31T00:00:00.000Z');
-      const reminderTime = service.calculateReminderScheduleTime(depletionDate, 72);
+      const reminderTime = service.calculateReminderScheduleTime(
+        depletionDate,
+        72,
+      );
 
       // 72 hours = 72 * 60 * 60 * 1000 = 259200000 ms (3 days prior)
-      expect(reminderTime.getTime()).toBe(depletionDate.getTime() - 72 * 60 * 60 * 1000);
+      expect(reminderTime.getTime()).toBe(
+        depletionDate.getTime() - 72 * 60 * 60 * 1000,
+      );
       expect(reminderTime.toISOString()).toBe('2026-10-28T00:00:00.000Z');
     });
   });
@@ -257,7 +274,9 @@ describe('ChronicRefillService', () => {
       prisma.prescription.findUnique.mockResolvedValueOnce(null);
 
       await expect(
-        service.provisionRefillOrder('user-patient-1', { prescriptionId: 'non-existent' }),
+        service.provisionRefillOrder('user-patient-1', {
+          prescriptionId: 'non-existent',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -268,7 +287,9 @@ describe('ChronicRefillService', () => {
       });
 
       await expect(
-        service.provisionRefillOrder('user-patient-1', { prescriptionId: 'rx-chronic-101' }),
+        service.provisionRefillOrder('user-patient-1', {
+          prescriptionId: 'rx-chronic-101',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
 

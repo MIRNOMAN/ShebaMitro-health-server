@@ -59,7 +59,11 @@ describe('EmergencyService', () => {
         count: jest.fn().mockResolvedValue(1),
         findMany: jest.fn().mockResolvedValue([mockAmbulance]),
         findUnique: jest.fn().mockResolvedValue(mockAmbulance),
-        update: jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...mockAmbulance, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(({ data }) =>
+            Promise.resolve({ ...mockAmbulance, ...data }),
+          ),
         createMany: jest.fn(),
       },
       patientProfile: {
@@ -84,9 +88,7 @@ describe('EmergencyService', () => {
       getRawClient: jest.fn().mockReturnValue({
         call: jest.fn().mockImplementation((command: string) => {
           if (command === 'GEOSEARCH') {
-            return Promise.resolve([
-              ['amb-101', '0.35', ['90.415', '23.812']],
-            ]);
+            return Promise.resolve([['amb-101', '0.35', ['90.415', '23.812']]]);
           }
           return Promise.resolve('OK');
         }),
@@ -131,7 +133,9 @@ describe('EmergencyService', () => {
 
       expect(result.success).toBe(true);
       expect(result.trackingToken).toBeDefined();
-      expect(result.trackingUrl).toContain('https://shebamitro.health/track/sos/');
+      expect(result.trackingUrl).toContain(
+        'https://shebamitro.health/track/sos/',
+      );
       expect(result.dispatchedAmbulance?.id).toBe('amb-101');
       expect(result.nearestHospital?.id).toBe('hosp-201');
 
@@ -156,13 +160,20 @@ describe('EmergencyService', () => {
       const result = await service.getTrackingStatus('sos_tr_test123');
       expect(result.sosId).toBe('sos-req-555');
       expect(result.isExpired).toBe(false);
-      expect(result.patientLocation).toEqual({ latitude: 23.8103, longitude: 90.4125 });
+      expect(result.patientLocation).toEqual({
+        latitude: 23.8103,
+        longitude: 90.4125,
+      });
     });
   });
 
   describe('updateAmbulanceLocation', () => {
     it('should update ambulance coordinates in DB and Redis GEO', async () => {
-      const result = await service.updateAmbulanceLocation('amb-101', 23.815, 90.418);
+      const result = await service.updateAmbulanceLocation(
+        'amb-101',
+        23.815,
+        90.418,
+      );
       expect(prisma.ambulance.update).toHaveBeenCalledWith({
         where: { id: 'amb-101' },
         data: { latitude: 23.815, longitude: 90.418 },

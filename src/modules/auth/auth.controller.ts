@@ -25,7 +25,10 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new user (Rate limited to 5 req/min)' })
@@ -46,10 +49,15 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login user with email and password (Rate limited to 5 req/min)' })
+  @ApiOperation({
+    summary: 'Login user with email and password (Rate limited to 5 req/min)',
+  })
   @ResponseMessage('Login successful')
   async login(
     @Body() loginDto: LoginDto,
@@ -67,10 +75,15 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh Access & Refresh tokens (Rate limited to 5 req/min)' })
+  @ApiOperation({
+    summary: 'Refresh Access & Refresh tokens (Rate limited to 5 req/min)',
+  })
   @ResponseMessage('Tokens refreshed successfully')
   async refresh(
     @Req() req: Request,
@@ -90,7 +103,10 @@ export class AuthController {
       throw new UnauthorizedException('Malformed refresh token structure.');
     }
 
-    const result = await this.authService.refreshTokens(userId, rawRefreshToken);
+    const result = await this.authService.refreshTokens(
+      userId,
+      rawRefreshToken,
+    );
     this.setAuthCookies(res, result.accessToken, result.refreshToken);
 
     return {
@@ -119,7 +135,11 @@ export class AuthController {
   /**
    * Helper to set HttpOnly, Secure, SameSite:Strict cookies on response.
    */
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
     const isProduction = process.env.NODE_ENV === 'production';
 
     res.cookie('access_token', accessToken, {

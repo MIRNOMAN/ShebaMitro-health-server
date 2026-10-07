@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TeleconsultService } from './teleconsult.service.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -19,7 +13,8 @@ export class TeleconsultController {
   @Get(':appointmentId/token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Generate dynamic Agora RTC access token for teleconsultation video session',
+    summary:
+      'Generate dynamic Agora RTC access token for teleconsultation video session',
     description:
       'Validates appointment slot time window (+-15 minutes of slot start), verifies caller identity, and generates dynamic Agora RTC access tokens with role-specific privileges (Publisher for Doctor/Patient, Subscriber for Assistants).',
   })

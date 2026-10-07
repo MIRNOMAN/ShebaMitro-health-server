@@ -11,8 +11,10 @@ export interface StripePaymentIntentResponse {
 @Injectable()
 export class StripeService {
   private readonly logger = new Logger(StripeService.name);
-  private readonly stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_mock_stripe_key';
-  private readonly webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_mock_stripe_secret';
+  private readonly stripeSecretKey =
+    process.env.STRIPE_SECRET_KEY || 'sk_test_mock_stripe_key';
+  private readonly webhookSecret =
+    process.env.STRIPE_WEBHOOK_SECRET || 'whsec_mock_stripe_secret';
 
   /**
    * Create Stripe PaymentIntent
@@ -72,7 +74,9 @@ export class StripeService {
         Buffer.from(signatureHeader.replace('sha256=', '')),
       );
     } catch (err: any) {
-      this.logger.warn(`Stripe Webhook cryptographic signature verification failed: ${err.message}`);
+      this.logger.warn(
+        `Stripe Webhook cryptographic signature verification failed: ${err.message}`,
+      );
       return false;
     }
   }

@@ -1,29 +1,41 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class FilterLabTestsDto {
   @ApiPropertyOptional({
-    description: 'Full-text search query across test name, description, category, or lab name',
+    description:
+      'Full-text search query across test name, description, category, or lab name',
   })
   @IsOptional()
   @IsString()
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Category filter (e.g. Hematology, Biochemistry, Radiology, Microbiology)',
+    description:
+      'Category filter (e.g. Hematology, Biochemistry, Radiology, Microbiology)',
   })
   @IsOptional()
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by fasting requirement (true/false)' })
+  @ApiPropertyOptional({
+    description: 'Filter by fasting requirement (true/false)',
+  })
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   fastingRequired?: boolean;
 
-  @ApiPropertyOptional({ description: 'Maximum turnaround time in hours (e.g. 24)' })
+  @ApiPropertyOptional({
+    description: 'Maximum turnaround time in hours (e.g. 24)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -43,7 +55,9 @@ export class FilterLabTestsDto {
   @Min(0)
   maxPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Lab accreditation filter (e.g. ISO15189, CAP, NABL)' })
+  @ApiPropertyOptional({
+    description: 'Lab accreditation filter (e.g. ISO15189, CAP, NABL)',
+  })
   @IsOptional()
   @IsString()
   labAccreditation?: string;

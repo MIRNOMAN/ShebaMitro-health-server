@@ -59,7 +59,9 @@ describe('RemindersQueueService & RemindersProcessor', () => {
     };
 
     whatsAppService = {
-      sendFallbackTemplateMessage: jest.fn().mockResolvedValue({ success: true }),
+      sendFallbackTemplateMessage: jest
+        .fn()
+        .mockResolvedValue({ success: true }),
     };
 
     audioReminderService = {
@@ -222,7 +224,9 @@ describe('RemindersQueueService & RemindersProcessor', () => {
 
       const result = await processor.process(mockFallbackJob);
 
-      expect(whatsAppService.sendFallbackTemplateMessage).not.toHaveBeenCalled();
+      expect(
+        whatsAppService.sendFallbackTemplateMessage,
+      ).not.toHaveBeenCalled();
       expect(result.status).toBe('ALREADY_ACKNOWLEDGED');
     });
   });

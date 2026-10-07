@@ -1,19 +1,34 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SearchDoctorsQueryDto {
-  @ApiPropertyOptional({ description: 'Search term for doctor name, bio, or hospital' })
+  @ApiPropertyOptional({
+    description: 'Search term for doctor name, bio, or hospital',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by specialty (array or string)', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Filter by specialty (array or string)',
+    type: [String],
+  })
   @IsOptional()
   @Transform(({ value }) => {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string') {
-      return value.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+      return value
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
     }
     return value;
   })
@@ -47,7 +62,9 @@ export class SearchDoctorsQueryDto {
   @IsString()
   gender?: string;
 
-  @ApiPropertyOptional({ description: 'Filter doctors available today (true/false)' })
+  @ApiPropertyOptional({
+    description: 'Filter doctors available today (true/false)',
+  })
   @IsOptional()
   @Transform(({ value }) => {
     if (value === 'true' || value === true) return true;

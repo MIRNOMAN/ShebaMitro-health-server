@@ -111,7 +111,11 @@ export class DoctorsService {
           },
           availabilities: true,
         },
-        orderBy: [{ rating: 'desc' }, { reviewCount: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [
+          { rating: 'desc' },
+          { reviewCount: 'desc' },
+          { createdAt: 'desc' },
+        ],
       }),
       this.prisma.doctorProfile.count({ where }),
     ]);

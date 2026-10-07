@@ -65,7 +65,11 @@ export class PaginationService {
       select,
     } = options;
 
-    const { cursor: rawCursor, limit = 10, direction = PaginationDirection.FORWARD } = cursorDto;
+    const {
+      cursor: rawCursor,
+      limit = 10,
+      direction = PaginationDirection.FORWARD,
+    } = cursorDto;
 
     const decodedCursor = rawCursor ? this.decodeCursor(rawCursor) : null;
     const fetchLimit = limit + 1;
@@ -112,10 +116,7 @@ export class PaginationService {
     const queryOptions: Record<string, any> = {
       where: combinedWhere,
       take: fetchLimit,
-      orderBy: [
-        { [orderByField]: sortOrder },
-        { id: sortOrder },
-      ],
+      orderBy: [{ [orderByField]: sortOrder }, { id: sortOrder }],
     };
 
     if (include) queryOptions.include = include;

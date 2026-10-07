@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateSosDto {
@@ -27,7 +34,8 @@ export class CreateSosDto {
 
   @ApiPropertyOptional({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Patient Profile ID or User ID (optional if authenticated patient)',
+    description:
+      'Patient Profile ID or User ID (optional if authenticated patient)',
   })
   @IsOptional()
   @IsString()

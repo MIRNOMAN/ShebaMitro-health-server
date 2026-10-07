@@ -75,7 +75,7 @@ export class UsersService {
     await this.findOne(id); // ensure exists
 
     const { password, ...rest } = updateUserDto as any;
-    let data: any = { ...rest };
+    const data: any = { ...rest };
     if (password) {
       data.passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     }

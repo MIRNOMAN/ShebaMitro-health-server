@@ -32,7 +32,8 @@ describe('ChronicRefillProcessor', () => {
     durationDays: 30,
     depletionDate: '2026-10-31T00:00:00.000Z',
     scheduledReminderTime: '2026-10-28T00:00:00.000Z',
-    reorderUrl: '/api/v1/pharmacy/refill-order?prescriptionId=rx-chronic-500&prescriptionItemId=item-501',
+    reorderUrl:
+      '/api/v1/pharmacy/refill-order?prescriptionId=rx-chronic-500&prescriptionItemId=item-501',
   };
 
   beforeEach(async () => {
@@ -43,11 +44,15 @@ describe('ChronicRefillProcessor', () => {
     };
 
     whatsAppService = {
-      sendChronicRefillReminder: jest.fn().mockResolvedValue({ success: true, messageId: 'wa-123' }),
+      sendChronicRefillReminder: jest
+        .fn()
+        .mockResolvedValue({ success: true, messageId: 'wa-123' }),
     };
 
     webPushService = {
-      sendChronicRefillNotification: jest.fn().mockResolvedValue({ success: true, endpoint: 'fcm://...' }),
+      sendChronicRefillNotification: jest
+        .fn()
+        .mockResolvedValue({ success: true, endpoint: 'fcm://...' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -88,13 +93,16 @@ describe('ChronicRefillProcessor', () => {
       reorderUrl: mockJobPayload.reorderUrl,
     });
 
-    expect(webPushService.sendChronicRefillNotification).toHaveBeenCalledWith('patient-123', {
-      patientId: 'patient-123',
-      prescriptionId: 'rx-chronic-500',
-      medicineName: 'Metformin 500mg',
-      depletionDate: '2026-10-31T00:00:00.000Z',
-      reorderEndpoint: '/api/v1/pharmacy/refill-order',
-    });
+    expect(webPushService.sendChronicRefillNotification).toHaveBeenCalledWith(
+      'patient-123',
+      {
+        patientId: 'patient-123',
+        prescriptionId: 'rx-chronic-500',
+        medicineName: 'Metformin 500mg',
+        depletionDate: '2026-10-31T00:00:00.000Z',
+        reorderEndpoint: '/api/v1/pharmacy/refill-order',
+      },
+    );
   });
 
   it('should ignore unrecognized job names gracefully', async () => {

@@ -31,8 +31,16 @@ describe('Production Application (e2e)', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      user: { id: 'user-doc-1', email: 'rahat@example.com', phone: '+8801711111111', isVerified: true },
-      availabilities: [{ dayOfWeek: 'SUNDAY', startTime: '09:00', endTime: '17:00' }, { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '17:00' }],
+      user: {
+        id: 'user-doc-1',
+        email: 'rahat@example.com',
+        phone: '+8801711111111',
+        isVerified: true,
+      },
+      availabilities: [
+        { dayOfWeek: 'SUNDAY', startTime: '09:00', endTime: '17:00' },
+        { dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '17:00' },
+      ],
     },
     {
       id: 'doc-2',
@@ -52,8 +60,15 @@ describe('Production Application (e2e)', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      user: { id: 'user-doc-2', email: 'nusrat@example.com', phone: '+8801722222222', isVerified: true },
-      availabilities: [{ dayOfWeek: 'TUESDAY', startTime: '10:00', endTime: '16:00' }],
+      user: {
+        id: 'user-doc-2',
+        email: 'nusrat@example.com',
+        phone: '+8801722222222',
+        isVerified: true,
+      },
+      availabilities: [
+        { dayOfWeek: 'TUESDAY', startTime: '10:00', endTime: '16:00' },
+      ],
     },
     {
       id: 'doc-3',
@@ -73,34 +88,67 @@ describe('Production Application (e2e)', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      user: { id: 'user-doc-3', email: 'tanvir@example.com', phone: '+8801733333333', isVerified: true },
+      user: {
+        id: 'user-doc-3',
+        email: 'tanvir@example.com',
+        phone: '+8801733333333',
+        isVerified: true,
+      },
       availabilities: [],
     },
   ];
 
   const mockPrismaService = {
     user: {
-      findUnique: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
-        if (where.email) {
-          return mockUsersDatabase.find((u) => u.email === where.email && !u.deletedAt) || null;
-        }
-        if (where.id) {
-          return mockUsersDatabase.find((u) => u.id === where.id && !u.deletedAt) || null;
-        }
-        return null;
-      }),
-      findFirst: jest.fn(async ({ where }: { where: { email?: string; id?: string; phone?: string } }) => {
-        if (where.email) {
-          return mockUsersDatabase.find((u) => u.email === where.email && !u.deletedAt) || null;
-        }
-        if (where.id) {
-          return mockUsersDatabase.find((u) => u.id === where.id && !u.deletedAt) || null;
-        }
-        if (where.phone) {
-          return mockUsersDatabase.find((u) => u.phone === where.phone && !u.deletedAt) || null;
-        }
-        return null;
-      }),
+      findUnique: jest.fn(
+        async ({ where }: { where: { email?: string; id?: string } }) => {
+          if (where.email) {
+            return (
+              mockUsersDatabase.find(
+                (u) => u.email === where.email && !u.deletedAt,
+              ) || null
+            );
+          }
+          if (where.id) {
+            return (
+              mockUsersDatabase.find(
+                (u) => u.id === where.id && !u.deletedAt,
+              ) || null
+            );
+          }
+          return null;
+        },
+      ),
+      findFirst: jest.fn(
+        async ({
+          where,
+        }: {
+          where: { email?: string; id?: string; phone?: string };
+        }) => {
+          if (where.email) {
+            return (
+              mockUsersDatabase.find(
+                (u) => u.email === where.email && !u.deletedAt,
+              ) || null
+            );
+          }
+          if (where.id) {
+            return (
+              mockUsersDatabase.find(
+                (u) => u.id === where.id && !u.deletedAt,
+              ) || null
+            );
+          }
+          if (where.phone) {
+            return (
+              mockUsersDatabase.find(
+                (u) => u.phone === where.phone && !u.deletedAt,
+              ) || null
+            );
+          }
+          return null;
+        },
+      ),
       create: jest.fn(async ({ data }: { data: any }) => {
         const newUser = {
           id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -119,18 +167,20 @@ describe('Production Application (e2e)', () => {
         mockUsersDatabase.push(newUser);
         return newUser;
       }),
-      update: jest.fn(async ({ where, data }: { where: { id: string }; data: any }) => {
-        const idx = mockUsersDatabase.findIndex((u) => u.id === where.id);
-        if (idx !== -1) {
-          mockUsersDatabase[idx] = {
-            ...mockUsersDatabase[idx],
-            ...data,
-            updatedAt: new Date(),
-          };
-          return mockUsersDatabase[idx];
-        }
-        return null;
-      }),
+      update: jest.fn(
+        async ({ where, data }: { where: { id: string }; data: any }) => {
+          const idx = mockUsersDatabase.findIndex((u) => u.id === where.id);
+          if (idx !== -1) {
+            mockUsersDatabase[idx] = {
+              ...mockUsersDatabase[idx],
+              ...data,
+              updatedAt: new Date(),
+            };
+            return mockUsersDatabase[idx];
+          }
+          return null;
+        },
+      ),
       deleteMany: jest.fn(async () => ({ count: 0 })),
     },
     doctorProfile: {
@@ -141,16 +191,24 @@ describe('Production Application (e2e)', () => {
           results = results.filter((d) =>
             where.OR.some((cond: any) => {
               if (cond.name?.contains) {
-                return d.name?.toLowerCase().includes(cond.name.contains.toLowerCase());
+                return d.name
+                  ?.toLowerCase()
+                  .includes(cond.name.contains.toLowerCase());
               }
               if (cond.bio?.contains) {
-                return d.bio?.toLowerCase().includes(cond.bio.contains.toLowerCase());
+                return d.bio
+                  ?.toLowerCase()
+                  .includes(cond.bio.contains.toLowerCase());
               }
               if (cond.hospital?.contains) {
-                return d.hospital?.toLowerCase().includes(cond.hospital.contains.toLowerCase());
+                return d.hospital
+                  ?.toLowerCase()
+                  .includes(cond.hospital.contains.toLowerCase());
               }
               if (cond.specialization?.contains) {
-                return d.specialization?.toLowerCase().includes(cond.specialization.contains.toLowerCase());
+                return d.specialization
+                  ?.toLowerCase()
+                  .includes(cond.specialization.contains.toLowerCase());
               }
               return false;
             }),
@@ -159,10 +217,14 @@ describe('Production Application (e2e)', () => {
 
         if (where?.consultFee) {
           if (where.consultFee.gte !== undefined) {
-            results = results.filter((d) => d.consultFee >= where.consultFee.gte);
+            results = results.filter(
+              (d) => d.consultFee >= where.consultFee.gte,
+            );
           }
           if (where.consultFee.lte !== undefined) {
-            results = results.filter((d) => d.consultFee <= where.consultFee.lte);
+            results = results.filter(
+              (d) => d.consultFee <= where.consultFee.lte,
+            );
           }
         }
 
@@ -171,13 +233,19 @@ describe('Production Application (e2e)', () => {
         }
 
         if (where?.gender?.equals) {
-          results = results.filter((d) => d.gender?.toLowerCase() === where.gender.equals.toLowerCase());
+          results = results.filter(
+            (d) =>
+              d.gender?.toLowerCase() === where.gender.equals.toLowerCase(),
+          );
         }
 
         if (where?.availabilities?.some) {
-          const targetDay = where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
+          const targetDay =
+            where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
           results = results.filter((d) =>
-            d.availabilities.some((a: any) => a.dayOfWeek.toLowerCase() === targetDay),
+            d.availabilities.some(
+              (a: any) => a.dayOfWeek.toLowerCase() === targetDay,
+            ),
           );
         }
 
@@ -190,16 +258,24 @@ describe('Production Application (e2e)', () => {
           results = results.filter((d) =>
             where.OR.some((cond: any) => {
               if (cond.name?.contains) {
-                return d.name?.toLowerCase().includes(cond.name.contains.toLowerCase());
+                return d.name
+                  ?.toLowerCase()
+                  .includes(cond.name.contains.toLowerCase());
               }
               if (cond.bio?.contains) {
-                return d.bio?.toLowerCase().includes(cond.bio.contains.toLowerCase());
+                return d.bio
+                  ?.toLowerCase()
+                  .includes(cond.bio.contains.toLowerCase());
               }
               if (cond.hospital?.contains) {
-                return d.hospital?.toLowerCase().includes(cond.hospital.contains.toLowerCase());
+                return d.hospital
+                  ?.toLowerCase()
+                  .includes(cond.hospital.contains.toLowerCase());
               }
               if (cond.specialization?.contains) {
-                return d.specialization?.toLowerCase().includes(cond.specialization.contains.toLowerCase());
+                return d.specialization
+                  ?.toLowerCase()
+                  .includes(cond.specialization.contains.toLowerCase());
               }
               return false;
             }),
@@ -208,10 +284,14 @@ describe('Production Application (e2e)', () => {
 
         if (where?.consultFee) {
           if (where.consultFee.gte !== undefined) {
-            results = results.filter((d) => d.consultFee >= where.consultFee.gte);
+            results = results.filter(
+              (d) => d.consultFee >= where.consultFee.gte,
+            );
           }
           if (where.consultFee.lte !== undefined) {
-            results = results.filter((d) => d.consultFee <= where.consultFee.lte);
+            results = results.filter(
+              (d) => d.consultFee <= where.consultFee.lte,
+            );
           }
         }
 
@@ -220,13 +300,19 @@ describe('Production Application (e2e)', () => {
         }
 
         if (where?.gender?.equals) {
-          results = results.filter((d) => d.gender?.toLowerCase() === where.gender.equals.toLowerCase());
+          results = results.filter(
+            (d) =>
+              d.gender?.toLowerCase() === where.gender.equals.toLowerCase(),
+          );
         }
 
         if (where?.availabilities?.some) {
-          const targetDay = where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
+          const targetDay =
+            where.availabilities.some.dayOfWeek?.equals?.toLowerCase();
           results = results.filter((d) =>
-            d.availabilities.some((a: any) => a.dayOfWeek.toLowerCase() === targetDay),
+            d.availabilities.some(
+              (a: any) => a.dayOfWeek.toLowerCase() === targetDay,
+            ),
           );
         }
 
@@ -256,11 +342,16 @@ describe('Production Application (e2e)', () => {
 
   describe('ApiResponseInterceptor', () => {
     it('/health (GET) should return standardized envelope { success, statusCode, data, message, timestamp }', async () => {
-      const response = await request(app.getHttpServer()).get('/health').expect(200);
+      const response = await request(app.getHttpServer())
+        .get('/health')
+        .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('statusCode', 200);
-      expect(response.body).toHaveProperty('message', 'System health status fetched successfully');
+      expect(response.body).toHaveProperty(
+        'message',
+        'System health status fetched successfully',
+      );
       expect(response.body).toHaveProperty('data');
       expect(response.body.data).toHaveProperty('status', 'UP');
       expect(response.body).toHaveProperty('timestamp');
@@ -299,7 +390,9 @@ describe('Production Application (e2e)', () => {
         })
         .expect(400);
 
-      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.headers['content-type']).toContain(
+        'application/problem+json',
+      );
       expect(response.body).toHaveProperty('type');
       expect(response.body).toHaveProperty('title', 'Bad Request');
       expect(response.body).toHaveProperty('status', 400);
@@ -330,7 +423,9 @@ describe('Production Application (e2e)', () => {
         .get('/health/test-rfc7807-error')
         .expect(400);
 
-      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.headers['content-type']).toContain(
+        'application/problem+json',
+      );
       expect(response.body).toEqual({
         type: 'https://httpstatuses.com/400',
         title: 'Bad Request',
@@ -346,7 +441,9 @@ describe('Production Application (e2e)', () => {
         .get('/health/test-404-error')
         .expect(404);
 
-      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.headers['content-type']).toContain(
+        'application/problem+json',
+      );
       expect(response.body).toEqual({
         type: 'https://httpstatuses.com/404',
         title: 'Not Found',
@@ -380,8 +477,12 @@ describe('Production Application (e2e)', () => {
 
       const cookies = response.get('Set-Cookie');
       expect(cookies).toBeDefined();
-      const hasAccessTokenCookie = cookies?.some((c: string) => c.includes('access_token='));
-      const hasRefreshTokenCookie = cookies?.some((c: string) => c.includes('refresh_token='));
+      const hasAccessTokenCookie = cookies?.some((c: string) =>
+        c.includes('access_token='),
+      );
+      const hasRefreshTokenCookie = cookies?.some((c: string) =>
+        c.includes('refresh_token='),
+      );
       expect(hasAccessTokenCookie).toBe(true);
       expect(hasRefreshTokenCookie).toBe(true);
 
@@ -436,7 +537,9 @@ describe('Production Application (e2e)', () => {
         })
         .expect(403);
 
-      expect(response.body.detail || response.body.message).toContain('Account locked');
+      expect(response.body.detail || response.body.message).toContain(
+        'Account locked',
+      );
     });
 
     it('POST /auth/refresh - should rotate access and refresh tokens', async () => {
@@ -461,7 +564,9 @@ describe('Production Application (e2e)', () => {
 
       const cookies = response.get('Set-Cookie');
       if (cookies) {
-        const clearedAccessToken = cookies.some((c: string) => c.includes('access_token=;'));
+        const clearedAccessToken = cookies.some((c: string) =>
+          c.includes('access_token=;'),
+        );
         expect(clearedAccessToken).toBe(true);
       }
     });
@@ -510,7 +615,9 @@ describe('Production Application (e2e)', () => {
         .set('Authorization', `Bearer ${patientAccessToken}`)
         .expect(403);
 
-      expect(response.body.detail || response.body.message).toContain('Access denied');
+      expect(response.body.detail || response.body.message).toContain(
+        'Access denied',
+      );
     });
 
     it('GET /users/me - should extract current authenticated user profile using @CurrentUser()', async () => {
@@ -560,7 +667,9 @@ describe('Production Application (e2e)', () => {
         .send({ phone: rateLimitPhone })
         .expect(429);
 
-      expect(response.body.detail || response.body.message).toContain('Maximum 3 attempts per 10 minutes allowed');
+      expect(response.body.detail || response.body.message).toContain(
+        'Maximum 3 attempts per 10 minutes allowed',
+      );
     });
 
     it('POST /auth/verify-otp - should fail with 400 when invalid code is submitted', async () => {
@@ -569,7 +678,9 @@ describe('Production Application (e2e)', () => {
         .send({ phone: testPhone, code: '000000' })
         .expect(400);
 
-      expect(response.body.detail || response.body.message).toContain('Invalid or expired OTP code');
+      expect(response.body.detail || response.body.message).toContain(
+        'Invalid or expired OTP code',
+      );
     });
 
     it('POST /auth/verify-otp - should verify valid OTP, update isVerified: true, and issue onboarding claims', async () => {
@@ -685,14 +796,28 @@ describe('Production Application (e2e)', () => {
 
     it('should return null when decoding invalid or malformed base64 cursor strings', () => {
       expect(paginationService.decodeCursor('')).toBeNull();
-      expect(paginationService.decodeCursor('invalid_base64_string')).toBeNull();
+      expect(
+        paginationService.decodeCursor('invalid_base64_string'),
+      ).toBeNull();
     });
 
     it('should perform cursor pagination over model data returning pageInfo with startCursor and endCursor', async () => {
       const mockChatLogs = [
-        { id: 'msg-3', createdAt: new Date('2026-10-05T16:03:00.000Z'), content: 'Hello 3' },
-        { id: 'msg-2', createdAt: new Date('2026-10-05T16:02:00.000Z'), content: 'Hello 2' },
-        { id: 'msg-1', createdAt: new Date('2026-10-05T16:01:00.000Z'), content: 'Hello 1' },
+        {
+          id: 'msg-3',
+          createdAt: new Date('2026-10-05T16:03:00.000Z'),
+          content: 'Hello 3',
+        },
+        {
+          id: 'msg-2',
+          createdAt: new Date('2026-10-05T16:02:00.000Z'),
+          content: 'Hello 2',
+        },
+        {
+          id: 'msg-1',
+          createdAt: new Date('2026-10-05T16:01:00.000Z'),
+          content: 'Hello 1',
+        },
       ];
 
       const mockModel = {

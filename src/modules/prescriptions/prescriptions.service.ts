@@ -37,7 +37,9 @@ export class PrescriptionsService {
    */
   @OnEvent('prescription.finalized')
   async handlePrescriptionFinalized(event: PrescriptionFinalizedEvent) {
-    this.logger.log(`Handling PrescriptionFinalizedEvent for prescription ID ${event.prescriptionId}`);
+    this.logger.log(
+      `Handling PrescriptionFinalizedEvent for prescription ID ${event.prescriptionId}`,
+    );
     try {
       await this.generateAndStorePdf(event.prescriptionId, event.prescription);
 
@@ -52,7 +54,9 @@ export class PrescriptionsService {
         }
       }
     } catch (err: any) {
-      this.logger.error(`Failed to handle PDF rendering or reminder scheduling on PrescriptionFinalizedEvent: ${err.message}`);
+      this.logger.error(
+        `Failed to handle PDF rendering or reminder scheduling on PrescriptionFinalizedEvent: ${err.message}`,
+      );
     }
   }
 
@@ -66,8 +70,23 @@ export class PrescriptionsService {
         where: { id: prescriptionId },
         include: {
           items: true,
-          doctor: { select: { id: true, name: true, specialization: true, bmdcRegNo: true, hospital: true } },
-          patient: { select: { id: true, gender: true, bloodGroup: true, user: { select: { name: true, email: true } } } },
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              specialization: true,
+              bmdcRegNo: true,
+              hospital: true,
+            },
+          },
+          patient: {
+            select: {
+              id: true,
+              gender: true,
+              bloodGroup: true,
+              user: { select: { name: true, email: true } },
+            },
+          },
         },
       });
     }
@@ -77,11 +96,16 @@ export class PrescriptionsService {
     }
 
     // 1. Render PDF layout using PDFKit and generate cryptographic QR code
-    const rendered = await this.pdfRendererService.renderPrescriptionPdf(prescription);
+    const rendered =
+      await this.pdfRendererService.renderPrescriptionPdf(prescription);
 
     // 2. Upload rendered PDF buffer to private S3 bucket
     const key = `prescriptions/pdf/${prescriptionId}.pdf`;
-    const uploadResult = await this.s3Service.uploadBuffer(rendered.pdfBuffer, key, 'application/pdf');
+    const uploadResult = await this.s3Service.uploadBuffer(
+      rendered.pdfBuffer,
+      key,
+      'application/pdf',
+    );
 
     // 3. Store qrCodeHash and pdfUrl in PostgreSQL
     const updated = await this.prisma.prescription.update({
@@ -127,7 +151,9 @@ export class PrescriptionsService {
     });
 
     if (!doctorProfile) {
-      throw new NotFoundException(`Doctor profile not found for user ID ${userId}`);
+      throw new NotFoundException(
+        `Doctor profile not found for user ID ${userId}`,
+      );
     }
 
     // 2. Fetch appointment details
@@ -136,7 +162,9 @@ export class PrescriptionsService {
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Appointment with ID ${dto.appointmentId} not found`);
+      throw new NotFoundException(
+        `Appointment with ID ${dto.appointmentId} not found`,
+      );
     }
 
     // 3. Verify that caller is the assigned doctor
@@ -167,7 +195,11 @@ export class PrescriptionsService {
     if (safetyResult.severity === 'SEVERE') {
       const override = dto.overrideAcknowledgement;
 
-      if (!override || !override.isAcknowledged || !override.clinicalJustification) {
+      if (
+        !override ||
+        !override.isAcknowledged ||
+        !override.clinicalJustification
+      ) {
         this.logger.warn(
           `Prescription submission blocked for appointment ${dto.appointmentId}: severe conflict flagged without electronic override`,
         );
@@ -215,7 +247,8 @@ export class PrescriptionsService {
           vitalsJson: dto.vitalsJson ? (dto.vitalsJson as any) : null,
           advice: dto.advice || null,
           followUpDate: dto.followUpDate ? new Date(dto.followUpDate) : null,
-          overrideReason: dto.overrideAcknowledgement?.clinicalJustification || null,
+          overrideReason:
+            dto.overrideAcknowledgement?.clinicalJustification || null,
           overrideJson: safetyResult ? (safetyResult as any) : null,
           items: {
             create: dto.items.map((item) => ({
@@ -231,7 +264,13 @@ export class PrescriptionsService {
         include: {
           items: true,
           doctor: {
-            select: { id: true, name: true, specialization: true, bmdcRegNo: true, hospital: true },
+            select: {
+              id: true,
+              name: true,
+              specialization: true,
+              bmdcRegNo: true,
+              hospital: true,
+            },
           },
           patient: {
             select: {
@@ -255,7 +294,10 @@ export class PrescriptionsService {
     });
 
     // 8. Render PDF synchronously or asynchronously and get presigned URL & hash
-    const pdfMeta = await this.generateAndStorePdf(prescription.id, prescription);
+    const pdfMeta = await this.generateAndStorePdf(
+      prescription.id,
+      prescription,
+    );
 
     const updatedPrescription = {
       ...prescription,
@@ -294,8 +336,21 @@ export class PrescriptionsService {
       where: { id },
       include: {
         items: true,
-        doctor: { select: { id: true, name: true, specialization: true, bmdcRegNo: true } },
-        patient: { select: { id: true, userId: true, user: { select: { name: true, email: true } } } },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            bmdcRegNo: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            userId: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
       },
     });
 

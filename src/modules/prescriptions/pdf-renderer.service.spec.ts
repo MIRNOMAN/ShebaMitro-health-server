@@ -69,7 +69,9 @@ describe('PdfRendererService', () => {
       expect(result.pdfBuffer).toBeInstanceOf(Buffer);
       expect(result.pdfBuffer.length).toBeGreaterThan(500); // Non-empty PDF
       expect(result.sha256Hash).toBeDefined();
-      expect(result.verifyUrl).toContain(`/verify-rx/${mockPrescription.id}?hash=`);
+      expect(result.verifyUrl).toContain(
+        `/verify-rx/${mockPrescription.id}?hash=`,
+      );
     });
   });
 });

@@ -29,7 +29,9 @@ export class AppointmentsGateway
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected from appointments gateway: ${client.id}`);
+    this.logger.log(
+      `Client disconnected from appointments gateway: ${client.id}`,
+    );
   }
 
   @SubscribeMessage('joinRoom')

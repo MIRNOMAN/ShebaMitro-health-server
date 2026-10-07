@@ -66,7 +66,10 @@ export class LabReportCryptoService {
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(authTag);
 
-    const decrypted = Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
+    const decrypted = Buffer.concat([
+      decipher.update(encryptedBuffer),
+      decipher.final(),
+    ]);
     return decrypted;
   }
 

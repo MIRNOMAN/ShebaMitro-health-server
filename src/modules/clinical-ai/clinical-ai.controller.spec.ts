@@ -53,7 +53,10 @@ describe('ClinicalAiController', () => {
       const result = await controller.transcribeConsultation(undefined, dto);
 
       expect(result).toEqual(mockTranscribeResult);
-      expect(service.transcribeConsultation).toHaveBeenCalledWith(undefined, dto);
+      expect(service.transcribeConsultation).toHaveBeenCalledWith(
+        undefined,
+        dto,
+      );
     });
   });
 });

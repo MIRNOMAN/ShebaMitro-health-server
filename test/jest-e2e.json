@@ -7,6 +7,11 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^(\\.\\.?/.*)\\.js$": "$1"
-  }
+    "^(\\.\\.?/.*)\\.js$": "$1",
+    "^@/(.*)$": "<rootDir>/../src/$1"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@nestjs/bullmq|@nestjs/bull-shared|bullmq)/)"
+  ]
 }
+

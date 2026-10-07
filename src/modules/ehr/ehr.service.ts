@@ -34,7 +34,9 @@ export class EhrService {
       });
 
       if (!patientProfile) {
-        throw new NotFoundException(`Patient profile not found for user ID ${callerUserId}`);
+        throw new NotFoundException(
+          `Patient profile not found for user ID ${callerUserId}`,
+        );
       }
 
       if (patientProfile.id !== targetPatientId) {
@@ -56,7 +58,9 @@ export class EhrService {
       });
 
       if (!doctorProfile) {
-        throw new NotFoundException(`Doctor profile not found for user ID ${callerUserId}`);
+        throw new NotFoundException(
+          `Doctor profile not found for user ID ${callerUserId}`,
+        );
       }
 
       const now = new Date();
@@ -117,7 +121,9 @@ export class EhrService {
       return true;
     }
 
-    throw new ForbiddenException('Access denied. Insufficient permissions to access EHR.');
+    throw new ForbiddenException(
+      'Access denied. Insufficient permissions to access EHR.',
+    );
   }
 
   /**
@@ -131,7 +137,11 @@ export class EhrService {
     dto: FilterEhrDto,
   ) {
     // 1. Enforce strict consent policy check
-    await this.validateEhrConsentPolicy(callerUserId, callerRole, targetPatientId);
+    await this.validateEhrConsentPolicy(
+      callerUserId,
+      callerRole,
+      targetPatientId,
+    );
 
     // 2. Fetch Patient Profile details
     const patient = await this.prisma.patientProfile.findUnique({
@@ -142,7 +152,9 @@ export class EhrService {
     });
 
     if (!patient) {
-      throw new NotFoundException(`Patient profile with ID ${targetPatientId} not found`);
+      throw new NotFoundException(
+        `Patient profile with ID ${targetPatientId} not found`,
+      );
     }
 
     const { from, to, recordType, doctorSpecialty, page = 1, limit = 10 } = dto;

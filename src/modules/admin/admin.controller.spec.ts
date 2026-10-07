@@ -63,7 +63,10 @@ describe('AdminController', () => {
     it('should return paginated unverified provider list', async () => {
       const result = await controller.getVerifications({ page: 1, limit: 10 });
       expect(result).toEqual(mockVerificationsResponse);
-      expect(adminService.getVerifications).toHaveBeenCalledWith({ page: 1, limit: 10 });
+      expect(adminService.getVerifications).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+      });
     });
   });
 
@@ -106,7 +109,10 @@ describe('AdminController', () => {
       };
       const result = await controller.executePayouts(dto, 'admin-user-1');
       expect(result).toEqual(mockPayoutsResponse);
-      expect(adminService.executePayouts).toHaveBeenCalledWith(dto, 'admin-user-1');
+      expect(adminService.executePayouts).toHaveBeenCalledWith(
+        dto,
+        'admin-user-1',
+      );
     });
   });
 });

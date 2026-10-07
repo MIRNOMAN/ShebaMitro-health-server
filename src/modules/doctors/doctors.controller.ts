@@ -14,7 +14,8 @@ export class DoctorsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Search and filter doctors with multi-faceted parameters and offset pagination',
+    summary:
+      'Search and filter doctors with multi-faceted parameters and offset pagination',
   })
   @ResponseMessage('Doctors fetched successfully')
   async searchDoctors(@Query() queryDto: SearchDoctorsQueryDto) {

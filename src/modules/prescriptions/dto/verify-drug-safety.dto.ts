@@ -15,24 +15,36 @@ export class PrescribedMedicationInputDto {
   @IsString()
   medicineName!: string;
 
-  @ApiPropertyOptional({ example: 'Coumadin', description: 'Generic composition or brand' })
+  @ApiPropertyOptional({
+    example: 'Coumadin',
+    description: 'Generic composition or brand',
+  })
   @IsOptional()
   @IsString()
   genericName?: string;
 }
 
 export class VerifyDrugSafetyDto {
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'Appointment ID' })
+  @ApiPropertyOptional({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Appointment ID',
+  })
   @IsOptional()
   @IsUUID()
   appointmentId?: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174001', description: 'Patient Profile ID' })
+  @ApiPropertyOptional({
+    example: '123e4567-e89b-12d3-a456-426614174001',
+    description: 'Patient Profile ID',
+  })
   @IsOptional()
   @IsUUID()
   patientId?: string;
 
-  @ApiProperty({ type: [PrescribedMedicationInputDto], description: 'List of prescribed medications to verify' })
+  @ApiProperty({
+    type: [PrescribedMedicationInputDto],
+    description: 'List of prescribed medications to verify',
+  })
   @IsNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })

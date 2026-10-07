@@ -1,7 +1,12 @@
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { WinstonLoggingInterceptor } from './winston-logging.interceptor.js';
-import { maskPhiPii, maskEmail, maskPhone, maskCardNumber } from '../logger/phi-masker.util.js';
+import {
+  maskPhiPii,
+  maskEmail,
+  maskPhone,
+  maskCardNumber,
+} from '../logger/phi-masker.util.js';
 import { winstonLoggerInstance } from '../logger/winston.logger.js';
 
 describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
@@ -11,8 +16,12 @@ describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
 
   beforeEach(() => {
     interceptor = new WinstonLoggingInterceptor();
-    winstonInfoSpy = jest.spyOn(winstonLoggerInstance, 'info').mockImplementation(() => winstonLoggerInstance);
-    winstonErrorSpy = jest.spyOn(winstonLoggerInstance, 'error').mockImplementation(() => winstonLoggerInstance);
+    winstonInfoSpy = jest
+      .spyOn(winstonLoggerInstance, 'info')
+      .mockImplementation(() => winstonLoggerInstance);
+    winstonErrorSpy = jest
+      .spyOn(winstonLoggerInstance, 'error')
+      .mockImplementation(() => winstonLoggerInstance);
   });
 
   afterEach(() => {
@@ -21,7 +30,9 @@ describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
 
   describe('PHI/PII Masking Utilities', () => {
     it('should mask email addresses correctly', () => {
-      expect(maskEmail('patient@shebamitro.health')).toBe('p***t@shebamitro.health');
+      expect(maskEmail('patient@shebamitro.health')).toBe(
+        'p***t@shebamitro.health',
+      );
       expect(maskEmail('dr@hospital.com')).toBe('d*@hospital.com');
     });
 
@@ -44,9 +55,7 @@ describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
         vitalsJson: { bp: '120/80', pulse: 72 },
         medicalAllergies: ['Penicillin', 'Sulfa'],
         diagnosis: 'Type 2 Diabetes',
-        items: [
-          { medicineName: 'Metformin', cardNumber: '4111222233334444' },
-        ],
+        items: [{ medicineName: 'Metformin', cardNumber: '4111222233334444' }],
       };
 
       const masked = maskPhiPii(sensitivePayload);
@@ -124,7 +133,9 @@ describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
 
           // Verify response logged with masked email/phone
           expect(winstonInfoSpy).toHaveBeenCalledWith(
-            expect.stringContaining('Completed Response: POST /api/v1/auth/login [200]'),
+            expect.stringContaining(
+              'Completed Response: POST /api/v1/auth/login [200]',
+            ),
             expect.objectContaining({
               correlationId: 'test-corr-123',
               statusCode: 200,
@@ -176,7 +187,9 @@ describe('WinstonLoggingInterceptor & PHI/PII Masker', () => {
         error: (err) => {
           expect(err).toBe(mockError);
           expect(winstonErrorSpy).toHaveBeenCalledWith(
-            expect.stringContaining('Failed Request: GET /api/v1/prescriptions/invalid-id [404]'),
+            expect.stringContaining(
+              'Failed Request: GET /api/v1/prescriptions/invalid-id [404]',
+            ),
             expect.objectContaining({
               statusCode: 404,
               error: expect.objectContaining({

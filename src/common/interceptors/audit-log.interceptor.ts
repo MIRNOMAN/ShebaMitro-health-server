@@ -17,9 +17,12 @@ export class AuditLogInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, originalUrl, url, user, params, query, body, ip, headers } = request;
+    const { method, originalUrl, url, user, params, query, body, ip, headers } =
+      request;
 
-    const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase());
+    const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(
+      method.toUpperCase(),
+    );
 
     if (!isMutation) {
       return next.handle();
@@ -41,7 +44,8 @@ export class AuditLogInterceptor implements NestInterceptor {
               targetType = 'PAYOUT_DISBURSEMENT';
             }
 
-            const sanitizedBody = body && typeof body === 'object' ? { ...body } : body;
+            const sanitizedBody =
+              body && typeof body === 'object' ? { ...body } : body;
 
             await this.prisma.auditLog.create({
               data: {
@@ -64,7 +68,10 @@ export class AuditLogInterceptor implements NestInterceptor {
               },
             });
           } catch (err: any) {
-            this.logger.error(`Failed to record AuditLog: ${err.message}`, err.stack);
+            this.logger.error(
+              `Failed to record AuditLog: ${err.message}`,
+              err.stack,
+            );
           }
         },
       }),

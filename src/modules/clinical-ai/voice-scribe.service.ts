@@ -80,7 +80,8 @@ export class VoiceScribeService {
     dto?: TranscribeConsultationDto,
   ): Promise<string> {
     const openaiKey =
-      this.configService.get<string>('OPENAI_API_KEY') || process.env.OPENAI_API_KEY;
+      this.configService.get<string>('OPENAI_API_KEY') ||
+      process.env.OPENAI_API_KEY;
 
     if (openaiKey && (file || dto?.audioBase64)) {
       try {
@@ -91,7 +92,11 @@ export class VoiceScribeService {
           audioBlob = new Blob([new Uint8Array(file.buffer)], {
             type: file.mimetype || 'audio/wav',
           });
-          formData.append('file', audioBlob, file.originalname || 'consultation.wav');
+          formData.append(
+            'file',
+            audioBlob,
+            file.originalname || 'consultation.wav',
+          );
         } else if (dto?.audioBase64) {
           const buffer = Buffer.from(dto.audioBase64, 'base64');
           audioBlob = new Blob([new Uint8Array(buffer)], { type: 'audio/wav' });
@@ -103,13 +108,16 @@ export class VoiceScribeService {
           formData.append('language', dto.language);
         }
 
-        const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${openaiKey}`,
+        const response = await fetch(
+          'https://api.openai.com/v1/audio/transcriptions',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${openaiKey}`,
+            },
+            body: formData,
           },
-          body: formData,
-        });
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -117,10 +125,14 @@ export class VoiceScribeService {
             return data.text;
           }
         } else {
-          this.logger.warn(`Whisper API HTTP ${response.status}: ${await response.text()}`);
+          this.logger.warn(
+            `Whisper API HTTP ${response.status}: ${await response.text()}`,
+          );
         }
       } catch (err: any) {
-        this.logger.warn(`Whisper API transcription failed: ${err.message}. Using clinical sample fallback.`);
+        this.logger.warn(
+          `Whisper API transcription failed: ${err.message}. Using clinical sample fallback.`,
+        );
       }
     }
 
@@ -142,7 +154,8 @@ export class VoiceScribeService {
    */
   private async parseTranscriptWithLlm(transcriptText: string) {
     const openaiKey =
-      this.configService.get<string>('OPENAI_API_KEY') || process.env.OPENAI_API_KEY;
+      this.configService.get<string>('OPENAI_API_KEY') ||
+      process.env.OPENAI_API_KEY;
     const anthropicKey =
       this.configService.get<string>('ANTHROPIC_API_KEY') ||
       process.env.ANTHROPIC_API_KEY;
@@ -151,13 +164,17 @@ export class VoiceScribeService {
       try {
         return await this.callOpenAiParseApi(openaiKey, transcriptText);
       } catch (err: any) {
-        this.logger.warn(`OpenAI parse failed: ${err.message}. Using fallback parser.`);
+        this.logger.warn(
+          `OpenAI parse failed: ${err.message}. Using fallback parser.`,
+        );
       }
     } else if (anthropicKey) {
       try {
         return await this.callAnthropicParseApi(anthropicKey, transcriptText);
       } catch (err: any) {
-        this.logger.warn(`Anthropic parse failed: ${err.message}. Using fallback parser.`);
+        this.logger.warn(
+          `Anthropic parse failed: ${err.message}. Using fallback parser.`,
+        );
       }
     }
 
@@ -201,7 +218,10 @@ Analyze the consultation transcript text and output structured medical JSON stri
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Consultation Transcript:\n"${transcriptText}"` },
+          {
+            role: 'user',
+            content: `Consultation Transcript:\n"${transcriptText}"`,
+          },
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' },
@@ -238,7 +258,9 @@ Analyze the consultation transcript text and output structured medical JSON stri
         model: 'claude-3-haiku-20240307',
         max_tokens: 1500,
         system: systemPrompt,
-        messages: [{ role: 'user', content: `Transcript:\n"${transcriptText}"` }],
+        messages: [
+          { role: 'user', content: `Transcript:\n"${transcriptText}"` },
+        ],
       }),
     });
 
@@ -263,8 +285,10 @@ Analyze the consultation transcript text and output structured medical JSON stri
     const textLower = transcriptText.toLowerCase();
 
     const chiefComplaints: string[] = [];
-    if (textLower.includes('headache')) chiefComplaints.push('Throbbing headache');
-    if (textLower.includes('fever')) chiefComplaints.push('High fever (101.2°F)');
+    if (textLower.includes('headache'))
+      chiefComplaints.push('Throbbing headache');
+    if (textLower.includes('fever'))
+      chiefComplaints.push('High fever (101.2°F)');
     if (textLower.includes('sore throat') || textLower.includes('throat'))
       chiefComplaints.push('Sore throat & pharyngeal discomfort');
     if (textLower.includes('cough')) chiefComplaints.push('Mild dry cough');
@@ -281,7 +305,8 @@ Analyze the consultation transcript text and output structured medical JSON stri
         schedulePattern: '1+1+1',
         mealTiming: 'AFTER_MEAL',
         durationDays: 5,
-        instructions: 'Take 1 tablet after meals three times daily for fever and pain relief.',
+        instructions:
+          'Take 1 tablet after meals three times daily for fever and pain relief.',
       },
       {
         medicineName: 'Amoxicillin 500mg',
@@ -302,8 +327,7 @@ Analyze the consultation transcript text and output structured medical JSON stri
           'Vitals: BP 120/80 mmHg, Pulse 82 bpm, Temp 101.2°F. Physical examination reveals tonsillar congestion and mild pharyngeal erythema.',
         assessment:
           'Acute viral pharyngitis with secondary bacterial respiratory tract infection risk.',
-        plan:
-          '1. Prescribed oral antibiotic (Amoxicillin 500mg) and antipyretic (Paracetamol 500mg).\n2. Advised adequate hydration and bed rest.\n3. Re-evaluate if fever persists beyond 48 hours.',
+        plan: '1. Prescribed oral antibiotic (Amoxicillin 500mg) and antipyretic (Paracetamol 500mg).\n2. Advised adequate hydration and bed rest.\n3. Re-evaluate if fever persists beyond 48 hours.',
       },
       chiefComplaints,
       suggestedMedications,
@@ -316,9 +340,13 @@ Analyze the consultation transcript text and output structured medical JSON stri
   private normalizeParsedClinicalData(parsed: any) {
     return {
       soapNotes: {
-        subjective: parsed.soapNotes?.subjective || 'Subjective symptoms noted.',
-        objective: parsed.soapNotes?.objective || 'Objective clinical findings recorded.',
-        assessment: parsed.soapNotes?.assessment || 'Clinical assessment / impression.',
+        subjective:
+          parsed.soapNotes?.subjective || 'Subjective symptoms noted.',
+        objective:
+          parsed.soapNotes?.objective ||
+          'Objective clinical findings recorded.',
+        assessment:
+          parsed.soapNotes?.assessment || 'Clinical assessment / impression.',
         plan: parsed.soapNotes?.plan || 'Treatment plan formulated.',
       },
       chiefComplaints: Array.isArray(parsed.chiefComplaints)
@@ -330,9 +358,12 @@ Analyze the consultation transcript text and output structured medical JSON stri
             genericName: m.genericName || null,
             dosageForm: m.dosageForm || 'Tablet',
             schedulePattern: m.schedulePattern || '1+0+1',
-            mealTiming: ['AFTER_MEAL', 'BEFORE_MEAL', 'WITH_MEAL', 'EMPTY_STOMACH'].includes(
-              m.mealTiming,
-            )
+            mealTiming: [
+              'AFTER_MEAL',
+              'BEFORE_MEAL',
+              'WITH_MEAL',
+              'EMPTY_STOMACH',
+            ].includes(m.mealTiming)
               ? m.mealTiming
               : 'AFTER_MEAL',
             durationDays: Number(m.durationDays) || 5,

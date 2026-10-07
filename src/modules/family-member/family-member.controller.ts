@@ -10,7 +10,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { FamilyMemberService } from './family-member.service.js';
 import { CreateFamilyMemberDto } from './dto/create-family-member.dto.js';
@@ -49,7 +54,9 @@ export class FamilyMemberController {
   @Get()
   @Roles(Role.PATIENT, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List all dependent family members for primary account holder' })
+  @ApiOperation({
+    summary: 'List all dependent family members for primary account holder',
+  })
   @ResponseMessage('Family members retrieved successfully')
   async getFamilyMembers(
     @CurrentUser('id') userId: string,
@@ -69,7 +76,11 @@ export class FamilyMemberController {
     @CurrentUser('role') role: string,
     @Param('id') familyMemberId: string,
   ) {
-    return this.familyMemberService.getFamilyMemberById(userId, role, familyMemberId);
+    return this.familyMemberService.getFamilyMemberById(
+      userId,
+      role,
+      familyMemberId,
+    );
   }
 
   @Put(':id')
@@ -103,14 +114,19 @@ export class FamilyMemberController {
     @CurrentUser('role') role: string,
     @Param('id') familyMemberId: string,
   ) {
-    return this.familyMemberService.deleteFamilyMember(userId, role, familyMemberId);
+    return this.familyMemberService.deleteFamilyMember(
+      userId,
+      role,
+      familyMemberId,
+    );
   }
 
   @Post(':id/appointments')
   @Roles(Role.PATIENT, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Book appointment on behalf of dependent family member (CASL Authorized)',
+    summary:
+      'Book appointment on behalf of dependent family member (CASL Authorized)',
     description:
       'Enables primary account holder to book a doctor appointment for a dependent family member.',
   })
@@ -143,17 +159,24 @@ export class FamilyMemberController {
     @CurrentUser('role') role: string,
     @Param('id') familyMemberId: string,
   ) {
-    return this.familyMemberService.getFamilyPrescriptions(userId, role, familyMemberId);
+    return this.familyMemberService.getFamilyPrescriptions(
+      userId,
+      role,
+      familyMemberId,
+    );
   }
 
   @Post(':id/reminders')
   @Roles(Role.PATIENT, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create independent medicine reminder alarm for dependent family member',
+    summary:
+      'Create independent medicine reminder alarm for dependent family member',
   })
   @ApiParam({ name: 'id', description: 'Family Member ID' })
-  @ResponseMessage('Independent medicine reminder created for family member successfully')
+  @ResponseMessage(
+    'Independent medicine reminder created for family member successfully',
+  )
   async createFamilyReminder(
     @CurrentUser('id') userId: string,
     @CurrentUser('role') role: string,
@@ -181,6 +204,10 @@ export class FamilyMemberController {
     @CurrentUser('role') role: string,
     @Param('id') familyMemberId: string,
   ) {
-    return this.familyMemberService.getFamilyReminders(userId, role, familyMemberId);
+    return this.familyMemberService.getFamilyReminders(
+      userId,
+      role,
+      familyMemberId,
+    );
   }
 }

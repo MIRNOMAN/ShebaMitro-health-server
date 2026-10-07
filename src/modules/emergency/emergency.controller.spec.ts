@@ -21,8 +21,12 @@ describe('EmergencyController', () => {
   beforeEach(async () => {
     service = {
       triggerSos: jest.fn().mockResolvedValue(mockSosResponse),
-      getTrackingStatus: jest.fn().mockResolvedValue({ sosId: 'sos-req-123', status: 'DISPATCHED' }),
-      updateAmbulanceLocation: jest.fn().mockResolvedValue({ id: 'amb-1', latitude: 23.8, longitude: 90.4 }),
+      getTrackingStatus: jest
+        .fn()
+        .mockResolvedValue({ sosId: 'sos-req-123', status: 'DISPATCHED' }),
+      updateAmbulanceLocation: jest
+        .fn()
+        .mockResolvedValue({ id: 'amb-1', latitude: 23.8, longitude: 90.4 }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -42,7 +46,11 @@ describe('EmergencyController', () => {
       const dto = { latitude: 23.81, longitude: 90.41 };
       const result = await controller.triggerSos('user-1', Role.PATIENT, dto);
 
-      expect(service.triggerSos).toHaveBeenCalledWith('user-1', Role.PATIENT, dto);
+      expect(service.triggerSos).toHaveBeenCalledWith(
+        'user-1',
+        Role.PATIENT,
+        dto,
+      );
       expect(result).toEqual(mockSosResponse);
     });
   });
@@ -57,8 +65,15 @@ describe('EmergencyController', () => {
 
   describe('updateAmbulanceLocation', () => {
     it('should delegate location update to emergencyService.updateAmbulanceLocation', async () => {
-      const result = await controller.updateAmbulanceLocation('amb-1', { latitude: 23.8, longitude: 90.4 });
-      expect(service.updateAmbulanceLocation).toHaveBeenCalledWith('amb-1', 23.8, 90.4);
+      const result = await controller.updateAmbulanceLocation('amb-1', {
+        latitude: 23.8,
+        longitude: 90.4,
+      });
+      expect(service.updateAmbulanceLocation).toHaveBeenCalledWith(
+        'amb-1',
+        23.8,
+        90.4,
+      );
       expect(result.id).toBe('amb-1');
     });
   });

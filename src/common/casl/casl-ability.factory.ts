@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { AbilityBuilder, createMongoAbility, MongoAbility } from '@casl/ability';
+import {
+  AbilityBuilder,
+  createMongoAbility,
+  MongoAbility,
+} from '@casl/ability';
 import { Role } from '@prisma/client';
 
 export enum Action {
@@ -14,11 +18,7 @@ export enum Action {
 }
 
 export type Subjects =
-  | 'FamilyMember'
-  | 'Appointment'
-  | 'Prescription'
-  | 'MedicineReminder'
-  | 'all';
+  'FamilyMember' | 'Appointment' | 'Prescription' | 'MedicineReminder' | 'all';
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
@@ -31,7 +31,9 @@ export interface UserSubject {
 @Injectable()
 export class CaslAbilityFactory {
   createForUser(user: UserSubject): AppAbility {
-    const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
+    const { can, cannot, build } = new AbilityBuilder<AppAbility>(
+      createMongoAbility,
+    );
 
     if (user.role === Role.ADMIN) {
       can(Action.MANAGE, 'all');

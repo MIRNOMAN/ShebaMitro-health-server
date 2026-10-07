@@ -231,9 +231,9 @@ describe('LabsService', () => {
     });
 
     it('should throw BadRequestException if file is missing', async () => {
-      await expect(service.uploadReport('order-999', undefined)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadReport('order-999', undefined),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

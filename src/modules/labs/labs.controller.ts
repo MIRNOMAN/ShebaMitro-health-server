@@ -75,7 +75,9 @@ export class LabsController {
     description:
       'Assigns a phlebotomist technician to a lab order and records live GPS geolocation coordinates.',
   })
-  @ResponseMessage('Phlebotomist technician assigned and dispatched successfully')
+  @ResponseMessage(
+    'Phlebotomist technician assigned and dispatched successfully',
+  )
   async assignTechnician(
     @Param('id') orderId: string,
     @Body() dto: AssignTechnicianDto,

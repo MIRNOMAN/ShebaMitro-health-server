@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 
 export enum LabReportTestType {
   CBC = 'CBC',
@@ -10,7 +16,8 @@ export enum LabReportTestType {
 
 export class UploadReportScanDto {
   @ApiPropertyOptional({
-    description: 'Patient Profile ID or User ID (optional if uploaded by authenticated patient)',
+    description:
+      'Patient Profile ID or User ID (optional if uploaded by authenticated patient)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
@@ -27,7 +34,8 @@ export class UploadReportScanDto {
   testType!: LabReportTestType;
 
   @ApiPropertyOptional({
-    example: 'https://shebamitro-bucket.s3.us-east-1.amazonaws.com/lab-scans/cbc-report.pdf',
+    example:
+      'https://shebamitro-bucket.s3.us-east-1.amazonaws.com/lab-scans/cbc-report.pdf',
     description: 'Scan image / PDF file URL',
   })
   @IsOptional()

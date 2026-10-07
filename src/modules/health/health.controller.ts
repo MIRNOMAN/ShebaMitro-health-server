@@ -55,7 +55,9 @@ export class HealthController {
 
   @Public()
   @Post('test-validation')
-  @ApiOperation({ summary: 'Test global ValidationPipe (strict whitelist & transform)' })
+  @ApiOperation({
+    summary: 'Test global ValidationPipe (strict whitelist & transform)',
+  })
   @ResponseMessage('Validation successful')
   testValidation(@Body() dto: TestValidationDto) {
     return {
@@ -65,16 +67,22 @@ export class HealthController {
 
   @Public()
   @Get('test-rfc7807-error')
-  @ApiOperation({ summary: 'Test RFC 7807 HttpExceptionFilter with custom exception' })
+  @ApiOperation({
+    summary: 'Test RFC 7807 HttpExceptionFilter with custom exception',
+  })
   testRfcError() {
-    throw new BadRequestException('This is a test Bad Request error to verify RFC 7807 output');
+    throw new BadRequestException(
+      'This is a test Bad Request error to verify RFC 7807 output',
+    );
   }
 
   @Public()
   @Get('test-404-error')
   @ApiOperation({ summary: 'Test RFC 7807 404 Not Found error' })
   testNotFoundError() {
-    throw new NotFoundException('Requested resource was not found on this server');
+    throw new NotFoundException(
+      'Requested resource was not found on this server',
+    );
   }
 
   @ApiBearerAuth()

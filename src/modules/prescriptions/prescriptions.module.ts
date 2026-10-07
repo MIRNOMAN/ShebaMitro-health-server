@@ -50,4 +50,3 @@ import {
   ],
 })
 export class PrescriptionModule {}
-

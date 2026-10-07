@@ -58,12 +58,12 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
       {
         name: 'auth',
         ttl: 60000,
-        limit: 5,   // 5 req/min on auth
+        limit: 5, // 5 req/min on auth
       },
       {
         name: 'checkout',
         ttl: 60000,
-        limit: 5,   // 5 req/min on checkout
+        limit: 5, // 5 req/min on checkout
       },
     ]),
 
@@ -144,4 +144,3 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
   ],
 })
 export class AppModule {}
-

@@ -51,7 +51,12 @@ export class AuthService {
       },
     });
 
-    const tokens = await this.generateTokens(user.id, user.email, user.role, user.isVerified);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.isVerified,
+    );
 
     return {
       user: {
@@ -89,7 +94,10 @@ export class AuthService {
     }
 
     // ── Verify Password with Argon2 ─────────────────────────────
-    const isPasswordValid = await argon2.verify(user.passwordHash, loginDto.password);
+    const isPasswordValid = await argon2.verify(
+      user.passwordHash,
+      loginDto.password,
+    );
 
     if (!isPasswordValid) {
       const updatedAttempts = user.failedLoginAttempts + 1;
@@ -97,7 +105,9 @@ export class AuthService {
 
       if (updatedAttempts >= MAX_FAILED_ATTEMPTS) {
         lockoutUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
-        this.logger.warn(`Account locked due to 5 failed login attempts: ${user.email}`);
+        this.logger.warn(
+          `Account locked due to 5 failed login attempts: ${user.email}`,
+        );
       }
 
       await this.prisma.user.update({
@@ -128,7 +138,12 @@ export class AuthService {
       });
     }
 
-    const tokens = await this.generateTokens(user.id, user.email, user.role, user.isVerified);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.isVerified,
+    );
 
     return {
       user: {
@@ -151,10 +166,15 @@ export class AuthService {
     });
 
     if (!user || !user.refreshTokenHash) {
-      throw new UnauthorizedException('Access denied. No valid refresh session.');
+      throw new UnauthorizedException(
+        'Access denied. No valid refresh session.',
+      );
     }
 
-    const isRefreshTokenValid = await argon2.verify(user.refreshTokenHash, rawRefreshToken);
+    const isRefreshTokenValid = await argon2.verify(
+      user.refreshTokenHash,
+      rawRefreshToken,
+    );
 
     if (!isRefreshTokenValid) {
       // Revoke compromised refresh tokens
@@ -198,7 +218,8 @@ export class AuthService {
     );
 
     // 7-day Refresh Token string
-    const rawRefreshToken = crypto.randomBytes(40).toString('hex') + '.' + userId;
+    const rawRefreshToken =
+      crypto.randomBytes(40).toString('hex') + '.' + userId;
 
     // Argon2 hash saved in PostgreSQL
     const refreshTokenHash = await argon2.hash(rawRefreshToken);

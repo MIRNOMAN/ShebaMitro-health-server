@@ -95,7 +95,8 @@ describe('PrescriptionsService', () => {
       renderPrescriptionPdf: jest.fn().mockResolvedValue({
         pdfBuffer: Buffer.from('mock-pdf'),
         sha256Hash: 'mock-sha256-hash-1234567890abcdef',
-        verifyUrl: 'https://shebamitro.health/verify-rx/rx-999?hash=mock-sha256-hash-1234567890abcdef',
+        verifyUrl:
+          'https://shebamitro.health/verify-rx/rx-999?hash=mock-sha256-hash-1234567890abcdef',
       }),
     };
 
@@ -222,9 +223,9 @@ describe('PrescriptionsService', () => {
         ],
       };
 
-      await expect(service.createPrescription('user-doc-1', dto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createPrescription('user-doc-1', dto),
+      ).rejects.toThrow(BadRequestException);
 
       expect(prismaService.prescription.create).not.toHaveBeenCalled();
     });

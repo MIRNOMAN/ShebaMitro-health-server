@@ -38,7 +38,10 @@ describe('TeleconsultController', () => {
     it('should return dynamic RTC access token', async () => {
       const result = await controller.getRtcToken('appt-tele-1', 'user-doc-1');
 
-      expect(service.generateRtcToken).toHaveBeenCalledWith('user-doc-1', 'appt-tele-1');
+      expect(service.generateRtcToken).toHaveBeenCalledWith(
+        'user-doc-1',
+        'appt-tele-1',
+      );
       expect(result).toEqual(mockTokenResult);
     });
   });

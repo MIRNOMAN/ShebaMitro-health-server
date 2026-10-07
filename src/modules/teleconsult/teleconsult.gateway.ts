@@ -13,7 +13,10 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
-import { CallStateDto, CallTelemetryPingDto } from './dto/teleconsult-telemetry.dto.js';
+import {
+  CallStateDto,
+  CallTelemetryPingDto,
+} from './dto/teleconsult-telemetry.dto.js';
 
 export interface AuthenticatedSocket extends Socket {
   data: {
@@ -28,7 +31,16 @@ export interface AuthenticatedSocket extends Socket {
 interface CallSession {
   appointmentId: string;
   startTime: number;
-  participants: Map<string, { socketId: string; userId: string; role: string; state: string; joinedAt: number }>;
+  participants: Map<
+    string,
+    {
+      socketId: string;
+      userId: string;
+      role: string;
+      state: string;
+      joinedAt: number;
+    }
+  >;
 }
 
 @WebSocketGateway({
@@ -66,7 +78,9 @@ export class TeleconsultGateway
           : null);
 
       if (!token) {
-        throw new WsException('Authentication token missing from connection handshake');
+        throw new WsException(
+          'Authentication token missing from connection handshake',
+        );
       }
 
       const secret = this.configService.get<string>('JWT_SECRET');
@@ -78,9 +92,13 @@ export class TeleconsultGateway
         role: payload.role,
       };
 
-      this.logger.log(`Teleconsult socket connected: ${client.id}, user: ${payload.sub}`);
+      this.logger.log(
+        `Teleconsult socket connected: ${client.id}, user: ${payload.sub}`,
+      );
     } catch (err: any) {
-      this.logger.warn(`Teleconsult socket connection failed auth: ${err.message}`);
+      this.logger.warn(
+        `Teleconsult socket connection failed auth: ${err.message}`,
+      );
       client.emit('error', { message: 'Unauthorized teleconsult connection' });
       client.disconnect(true);
     }
@@ -88,7 +106,9 @@ export class TeleconsultGateway
 
   handleDisconnect(client: AuthenticatedSocket) {
     const userId = client.data?.user?.id;
-    this.logger.log(`Teleconsult socket disconnected: ${client.id} (user: ${userId})`);
+    this.logger.log(
+      `Teleconsult socket disconnected: ${client.id} (user: ${userId})`,
+    );
 
     // Clean up or transition state for disconnected call sessions
     if (userId) {
@@ -132,7 +152,10 @@ export class TeleconsultGateway
     if (!session) return;
 
     const now = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((now - session.startTime) / 1000));
+    const durationSeconds = Math.max(
+      0,
+      Math.floor((now - session.startTime) / 1000),
+    );
     const activeParticipants = Array.from(session.participants.values()).filter(
       (p) => p.state === 'CONNECTED' || p.state === 'RECONNECTED',
     );

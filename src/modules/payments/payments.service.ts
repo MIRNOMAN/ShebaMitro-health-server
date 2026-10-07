@@ -25,7 +25,8 @@ import { StripeService } from './stripe.service.js';
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private readonly hmacWebhookSecret =
-    process.env.WEBHOOK_HMAC_SECRET || 'shebamitro-webhook-hmac-secret-key-32b!';
+    process.env.WEBHOOK_HMAC_SECRET ||
+    'shebamitro-webhook-hmac-secret-key-32b!';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -98,7 +99,9 @@ export class PaymentsService {
       });
 
       if (!pharmacyOrder) {
-        throw new NotFoundException(`PharmacyOrder with ID ${orderId} not found`);
+        throw new NotFoundException(
+          `PharmacyOrder with ID ${orderId} not found`,
+        );
       }
 
       amount = pharmacyOrder.totalAmount || 300;
@@ -118,14 +121,21 @@ export class PaymentsService {
     let clientSecret: string | null = null;
 
     if (paymentGateway === PaymentGateway.BKASH) {
-      const bkashResult = await this.bkashService.createPayment(amount, orderId);
+      const bkashResult = await this.bkashService.createPayment(
+        amount,
+        orderId,
+      );
       paymentIntentId = bkashResult.paymentID;
       paymentUrl = bkashResult.bkashURL;
     } else if (paymentGateway === PaymentGateway.STRIPE) {
-      const stripeResult = await this.stripeService.createPaymentIntent(amount, 'BDT', {
-        orderId,
-        orderType,
-      });
+      const stripeResult = await this.stripeService.createPaymentIntent(
+        amount,
+        'BDT',
+        {
+          orderId,
+          orderType,
+        },
+      );
       paymentIntentId = stripeResult.paymentIntentId;
       clientSecret = stripeResult.clientSecret;
     }
@@ -190,19 +200,23 @@ export class PaymentsService {
     const isValidSignature = this.verifyHmacSignature(rawBody, signatureHeader);
 
     if (!isValidSignature) {
-      this.logger.warn(`Rejected payment webhook: invalid HMAC cryptographic signature`);
+      this.logger.warn(
+        `Rejected payment webhook: invalid HMAC cryptographic signature`,
+      );
       throw new UnauthorizedException(
         'Invalid webhook cryptographic HMAC signature verification',
       );
     }
 
     // 2. Extract transaction identifiers
-    const idempotencyKey =
-      payload.idempotencyKey || payload.idempotency_key;
+    const idempotencyKey = payload.idempotencyKey || payload.idempotency_key;
     const paymentIntentId =
       payload.paymentIntentId || payload.payment_intent || payload.paymentID;
     const externalTrxId =
-      payload.trxID || payload.transactionId || payload.id || `trx-${Date.now()}`;
+      payload.trxID ||
+      payload.transactionId ||
+      payload.id ||
+      `trx-${Date.now()}`;
 
     // Query Transaction by idempotencyKey, paymentIntentId, or ID
     const transaction = await this.prisma.transaction.findFirst({
@@ -219,7 +233,9 @@ export class PaymentsService {
       this.logger.warn(
         `Webhook payload could not be matched to a pending Transaction: ${JSON.stringify(payload)}`,
       );
-      throw new NotFoundException('Transaction matching webhook payload not found');
+      throw new NotFoundException(
+        'Transaction matching webhook payload not found',
+      );
     }
 
     // 3. Idempotency Check: if transaction already completed, prevent duplicate processing
@@ -311,14 +327,27 @@ export class PaymentsService {
   /**
    * Helper: Verify HMAC cryptographic signature
    */
-  verifyHmacSignature(rawBody: string | Buffer, signatureHeader: string): boolean {
+  verifyHmacSignature(
+    rawBody: string | Buffer,
+    signatureHeader: string,
+  ): boolean {
     if (!signatureHeader) return false;
 
     // Delegate to StripeService or compute directly using crypto
     const stringBody =
-      typeof rawBody === 'string' ? rawBody : rawBody ? rawBody.toString('utf-8') : '';
+      typeof rawBody === 'string'
+        ? rawBody
+        : rawBody
+          ? rawBody.toString('utf-8')
+          : '';
 
-    if (this.stripeService.verifyWebhookSignature(stringBody, signatureHeader, this.hmacWebhookSecret)) {
+    if (
+      this.stripeService.verifyWebhookSignature(
+        stringBody,
+        signatureHeader,
+        this.hmacWebhookSecret,
+      )
+    ) {
       return true;
     }
 
@@ -329,7 +358,10 @@ export class PaymentsService {
         .digest('hex');
 
       const cleanHeader = signatureHeader.replace(/^sha256=/, '').trim();
-      return crypto.timingSafeEqual(Buffer.from(computedHmac), Buffer.from(cleanHeader));
+      return crypto.timingSafeEqual(
+        Buffer.from(computedHmac),
+        Buffer.from(cleanHeader),
+      );
     } catch {
       return false;
     }

@@ -23,10 +23,26 @@ describe('TeleconsultService', () => {
     patient: { id: 'patient-profile-1', userId: 'user-patient-1' },
   };
 
-  const mockDoctorUser = { id: 'user-doc-1', role: Role.DOCTOR, deletedAt: null };
-  const mockPatientUser = { id: 'user-patient-1', role: Role.PATIENT, deletedAt: null };
-  const mockAdminUser = { id: 'user-admin-1', role: Role.ADMIN, deletedAt: null };
-  const mockUnrelatedUser = { id: 'user-unrelated-99', role: Role.PATIENT, deletedAt: null };
+  const mockDoctorUser = {
+    id: 'user-doc-1',
+    role: Role.DOCTOR,
+    deletedAt: null,
+  };
+  const mockPatientUser = {
+    id: 'user-patient-1',
+    role: Role.PATIENT,
+    deletedAt: null,
+  };
+  const mockAdminUser = {
+    id: 'user-admin-1',
+    role: Role.ADMIN,
+    deletedAt: null,
+  };
+  const mockUnrelatedUser = {
+    id: 'user-unrelated-99',
+    role: Role.PATIENT,
+    deletedAt: null,
+  };
 
   beforeEach(async () => {
     prismaService = {
@@ -53,7 +69,8 @@ describe('TeleconsultService', () => {
           useValue: {
             get: jest.fn((key: string, defaultValue?: any) => {
               if (key === 'AGORA_APP_ID') return 'test-agora-app-id';
-              if (key === 'AGORA_APP_CERTIFICATE') return 'test-agora-app-certificate';
+              if (key === 'AGORA_APP_CERTIFICATE')
+                return 'test-agora-app-certificate';
               return defaultValue;
             }),
           },
@@ -70,7 +87,10 @@ describe('TeleconsultService', () => {
 
   describe('generateRtcToken', () => {
     it('should generate PUBLISHER RTC token for assigned doctor within +-15m window', async () => {
-      const result = await service.generateRtcToken('user-doc-1', 'appt-tele-1');
+      const result = await service.generateRtcToken(
+        'user-doc-1',
+        'appt-tele-1',
+      );
 
       expect(result.appointmentId).toBe('appt-tele-1');
       expect(result.channelName).toBe('teleconsult_appt-tele-1');
@@ -80,14 +100,20 @@ describe('TeleconsultService', () => {
     });
 
     it('should generate PUBLISHER RTC token for assigned patient within +-15m window', async () => {
-      const result = await service.generateRtcToken('user-patient-1', 'appt-tele-1');
+      const result = await service.generateRtcToken(
+        'user-patient-1',
+        'appt-tele-1',
+      );
 
       expect(result.role).toBe('PUBLISHER');
       expect(result.uid).toBe('user-patient-1');
     });
 
     it('should generate SUBSCRIBER RTC token for assistant/admin user', async () => {
-      const result = await service.generateRtcToken('user-admin-1', 'appt-tele-1');
+      const result = await service.generateRtcToken(
+        'user-admin-1',
+        'appt-tele-1',
+      );
 
       expect(result.role).toBe('SUBSCRIBER');
       expect(result.uid).toBe('user-admin-1');
@@ -105,7 +131,9 @@ describe('TeleconsultService', () => {
         slotStartTime: new Date(Date.now() - 3 * 3600 * 1000), // 3 hours ago
         slotEndTime: new Date(Date.now() - 2.5 * 3600 * 1000),
       };
-      prismaService.appointment.findUnique.mockResolvedValueOnce(expiredAppointment);
+      prismaService.appointment.findUnique.mockResolvedValueOnce(
+        expiredAppointment,
+      );
 
       await expect(
         service.generateRtcToken('user-doc-1', 'appt-tele-1'),

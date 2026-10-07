@@ -19,7 +19,12 @@ export interface EmergencyDispatchPayload {
   latitude: number;
   longitude: number;
   distanceKm: number;
-  nearestHospital?: { id: string; name: string; address: string; distanceKm: number } | null;
+  nearestHospital?: {
+    id: string;
+    name: string;
+    address: string;
+    distanceKm: number;
+  } | null;
   ambulance?: { id: string; driverName: string; vehicleNumber: string } | null;
   createdAt: Date | string;
 }
@@ -30,7 +35,9 @@ export interface EmergencyDispatchPayload {
   },
   namespace: '/emergency',
 })
-export class EmergencyGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class EmergencyGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -51,7 +58,9 @@ export class EmergencyGateway implements OnGatewayConnection, OnGatewayDisconnec
   ) {
     if (payload?.roomId) {
       client.join(payload.roomId);
-      this.logger.log(`Client ${client.id} joined emergency room: ${payload.roomId}`);
+      this.logger.log(
+        `Client ${client.id} joined emergency room: ${payload.roomId}`,
+      );
       return { event: 'joinedRoom', data: { roomId: payload.roomId } };
     }
   }
@@ -71,13 +80,19 @@ export class EmergencyGateway implements OnGatewayConnection, OnGatewayDisconnec
 
       // 2. Target specific ambulance driver room
       if (payload.ambulance?.id) {
-        this.server.to(`driver_${payload.ambulance.id}`).emit('ambulance_dispatch', payload);
-        this.server.to(`driver_${payload.ambulance.id}`).emit('sos_alert', payload);
+        this.server
+          .to(`driver_${payload.ambulance.id}`)
+          .emit('ambulance_dispatch', payload);
+        this.server
+          .to(`driver_${payload.ambulance.id}`)
+          .emit('sos_alert', payload);
       }
 
       // 3. Target specific tracking room
       if (payload.trackingToken) {
-        this.server.to(`track_${payload.trackingToken}`).emit('ambulance_dispatch', payload);
+        this.server
+          .to(`track_${payload.trackingToken}`)
+          .emit('ambulance_dispatch', payload);
       }
     }
   }
@@ -85,7 +100,10 @@ export class EmergencyGateway implements OnGatewayConnection, OnGatewayDisconnec
   /**
    * Broadcast live GPS location updates for active tracking sessions
    */
-  emitLocationUpdate(trackingToken: string, payload: { latitude: number; longitude: number; speed?: number }) {
+  emitLocationUpdate(
+    trackingToken: string,
+    payload: { latitude: number; longitude: number; speed?: number },
+  ) {
     if (this.server) {
       this.server.to(`track_${trackingToken}`).emit('location_update', payload);
       this.server.emit(`location_update_${trackingToken}`, payload);

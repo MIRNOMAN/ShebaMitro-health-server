@@ -79,7 +79,10 @@ describe('PharmacyController', () => {
 
       const result = await controller.createCartOrder('user-pat-1', dto);
 
-      expect(pharmacyService.createCartOrder).toHaveBeenCalledWith('user-pat-1', dto);
+      expect(pharmacyService.createCartOrder).toHaveBeenCalledWith(
+        'user-pat-1',
+        dto,
+      );
       expect(result.id).toBe('order-pharm-101');
     });
   });
@@ -94,7 +97,10 @@ describe('PharmacyController', () => {
 
       const result = await controller.refillOrder('user-pat-1', dto);
 
-      expect(chronicRefillService.provisionRefillOrder).toHaveBeenCalledWith('user-pat-1', dto);
+      expect(chronicRefillService.provisionRefillOrder).toHaveBeenCalledWith(
+        'user-pat-1',
+        dto,
+      );
       expect(result.success).toBe(true);
       expect(result.partnerPharmacy.name).toBe('Lazz Pharma (Dhanmondi)');
       expect(result.order.id).toBe('order-pharm-101');
@@ -118,4 +124,3 @@ describe('PharmacyController', () => {
     });
   });
 });
-

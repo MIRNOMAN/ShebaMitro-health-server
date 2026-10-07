@@ -21,11 +21,15 @@ export class OtpController {
   constructor(private readonly otpService: OtpService) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
   @Post('request-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Request a 6-digit OTP code (Rate limit: 5 req/min, max 3 attempts per 10 minutes)',
+    summary:
+      'Request a 6-digit OTP code (Rate limit: 5 req/min, max 3 attempts per 10 minutes)',
   })
   @ResponseMessage('OTP code requested successfully')
   async requestOtp(@Body() dto: RequestOtpDto) {
@@ -33,10 +37,16 @@ export class OtpController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify OTP code and issue onboarding claims (Rate limited to 5 req/min)' })
+  @ApiOperation({
+    summary:
+      'Verify OTP code and issue onboarding claims (Rate limited to 5 req/min)',
+  })
   @ResponseMessage('OTP verified successfully')
   async verifyOtp(
     @Body() dto: VerifyOtpDto,

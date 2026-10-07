@@ -12,7 +12,11 @@ describe('EhrController', () => {
     patientDemographics: { id: 'patient-123', name: 'Abdul' },
     consentVerified: true,
     appliedFilters: { recordType: 'ALL' },
-    summary: { totalVisitsCount: 1, totalPrescriptionsCount: 1, totalLabReportsCount: 1 },
+    summary: {
+      totalVisitsCount: 1,
+      totalPrescriptionsCount: 1,
+      totalLabReportsCount: 1,
+    },
     records: {
       historicalVisits: [{ id: 'appt-1' }],
       prescriptions: [{ id: 'rx-1' }],

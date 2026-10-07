@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { SymptomTriageService, MANDATORY_MEDICAL_DISCLAIMER } from './symptom-triage.service.js';
+import {
+  SymptomTriageService,
+  MANDATORY_MEDICAL_DISCLAIMER,
+} from './symptom-triage.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 
 describe('SymptomTriageService', () => {
@@ -106,7 +109,8 @@ describe('SymptomTriageService', () => {
   describe('triageSymptoms', () => {
     it('should classify severe chest pain as EMERGENCY and return top 3 matching doctors with disclaimer', async () => {
       const dto = {
-        symptoms: 'Crushing chest pain radiating to arm and difficulty breathing',
+        symptoms:
+          'Crushing chest pain radiating to arm and difficulty breathing',
         duration: '30 minutes',
         severity: 'SEVERE',
         age: 55,

@@ -79,7 +79,11 @@ describe('ChatController', () => {
     it('should call getPaginatedMessages with cursorDto', async () => {
       const cursorDto = { limit: 10, direction: 'forward' as any };
 
-      const result = await controller.getMessages('appt-123', cursorDto, 'user-patient-1');
+      const result = await controller.getMessages(
+        'appt-123',
+        cursorDto,
+        'user-patient-1',
+      );
 
       expect(chatService.getPaginatedMessages).toHaveBeenCalledWith(
         'user-patient-1',
@@ -103,7 +107,10 @@ describe('ChatController', () => {
         'user-patient-1',
         'appt-123',
       );
-      expect(s3Service.uploadAttachment).toHaveBeenCalledWith(mockFile, 'appt-123');
+      expect(s3Service.uploadAttachment).toHaveBeenCalledWith(
+        mockFile,
+        'appt-123',
+      );
       expect(chatService.saveMessage).toHaveBeenCalledWith(
         'user-patient-1',
         'appt-123',
@@ -132,7 +139,10 @@ describe('ChatController', () => {
 
   describe('PUT /api/v1/chat/:appointmentId/read-receipts', () => {
     it('should mark messages as read and broadcast read-receipts over WebSocket room', async () => {
-      const result = await controller.markReadReceipts('appt-123', 'user-patient-1');
+      const result = await controller.markReadReceipts(
+        'appt-123',
+        'user-patient-1',
+      );
 
       expect(chatService.markRoomReadReceipts).toHaveBeenCalledWith(
         'user-patient-1',

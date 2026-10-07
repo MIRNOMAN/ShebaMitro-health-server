@@ -24,9 +24,10 @@ export interface ApiResponseEnvelope<T = unknown> {
  * { success: true, statusCode, data, message, timestamp }
  */
 @Injectable()
-export class ApiResponseInterceptor<T = unknown>
-  implements NestInterceptor<T, ApiResponseEnvelope<T>>
-{
+export class ApiResponseInterceptor<T = unknown> implements NestInterceptor<
+  T,
+  ApiResponseEnvelope<T>
+> {
   constructor(private readonly reflector: Reflector) {}
 
   intercept(

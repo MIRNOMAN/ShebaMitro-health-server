@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsArray, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 
 export class RefillOrderDto {
   @ApiProperty({
@@ -12,7 +18,8 @@ export class RefillOrderDto {
 
   @ApiPropertyOptional({
     example: '123e4567-e89b-12d3-a456-426614174001',
-    description: 'Specific Prescription Item ID to refill. If omitted, refills all eligible chronic items.',
+    description:
+      'Specific Prescription Item ID to refill. If omitted, refills all eligible chronic items.',
   })
   @IsOptional()
   @IsUUID()
@@ -29,7 +36,8 @@ export class RefillOrderDto {
 
   @ApiPropertyOptional({
     example: '123e4567-e89b-12d3-a456-426614174002',
-    description: 'Target partner pharmacy ID. If omitted, automatically routes to patient preferred partner pharmacy.',
+    description:
+      'Target partner pharmacy ID. If omitted, automatically routes to patient preferred partner pharmacy.',
   })
   @IsOptional()
   @IsUUID()
@@ -37,7 +45,8 @@ export class RefillOrderDto {
 
   @ApiPropertyOptional({
     example: 'House 12, Road 5, Dhanmondi, Dhaka',
-    description: 'Shipping address for delivery. If omitted, auto-resolves from patient profile / previous order history.',
+    description:
+      'Shipping address for delivery. If omitted, auto-resolves from patient profile / previous order history.',
   })
   @IsOptional()
   @IsString()

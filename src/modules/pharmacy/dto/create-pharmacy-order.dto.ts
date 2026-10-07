@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsArray, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 
 export class CreatePharmacyOrderDto {
   @ApiProperty({ description: 'ID of the verified Prescription' })
@@ -22,7 +28,8 @@ export class CreatePharmacyOrderDto {
 
   @ApiPropertyOptional({
     example: ['item-uuid-1', 'item-uuid-2'],
-    description: 'Optional array of specific prescription item IDs to order. If omitted, orders all items.',
+    description:
+      'Optional array of specific prescription item IDs to order. If omitted, orders all items.',
   })
   @IsOptional()
   @IsArray()

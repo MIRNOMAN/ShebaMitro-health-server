@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsDateString, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum EhrRecordType {
@@ -28,7 +35,8 @@ export class FilterEhrDto {
   @ApiPropertyOptional({
     enum: EhrRecordType,
     example: EhrRecordType.PRESCRIPTION,
-    description: 'Filter by record type: PRESCRIPTION, LAB_REPORT, or CLINICAL_NOTE',
+    description:
+      'Filter by record type: PRESCRIPTION, LAB_REPORT, or CLINICAL_NOTE',
   })
   @IsOptional()
   @IsEnum(EhrRecordType)
@@ -36,7 +44,8 @@ export class FilterEhrDto {
 
   @ApiPropertyOptional({
     example: 'Cardiology',
-    description: 'Filter by doctor specialization (e.g. Cardiology, Pulmonology, General Medicine)',
+    description:
+      'Filter by doctor specialization (e.g. Cardiology, Pulmonology, General Medicine)',
   })
   @IsOptional()
   @IsString()

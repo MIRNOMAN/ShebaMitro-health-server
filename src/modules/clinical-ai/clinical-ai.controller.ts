@@ -37,15 +37,19 @@ export class ClinicalAiController {
   @UseInterceptors(FileInterceptor('audio'))
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOperation({
-    summary: 'Transcribe live consultation audio and generate structured SOAP notes',
+    summary:
+      'Transcribe live consultation audio and generate structured SOAP notes',
     description:
       'Feeds live consultation audio chunk into OpenAI Whisper API for transcription, then processes transcript through an LLM pipeline to extract SOAP notes (Subjective, Objective, Assessment, Plan), chief complaints, and draft suggested medications for doctor verification before saving.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Audio transcribed and structured clinical SOAP notes with suggested medications returned successfully.',
+    description:
+      'Audio transcribed and structured clinical SOAP notes with suggested medications returned successfully.',
   })
-  @ResponseMessage('Consultation audio transcribed and SOAP notes parsed successfully')
+  @ResponseMessage(
+    'Consultation audio transcribed and SOAP notes parsed successfully',
+  )
   async transcribeConsultation(
     @UploadedFile() file?: Express.Multer.File,
     @Body() dto?: TranscribeConsultationDto,

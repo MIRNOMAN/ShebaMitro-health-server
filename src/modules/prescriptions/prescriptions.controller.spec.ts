@@ -93,7 +93,10 @@ describe('PrescriptionsController', () => {
 
       const result = await controller.createPrescription('user-doc-1', dto);
 
-      expect(service.createPrescription).toHaveBeenCalledWith('user-doc-1', dto);
+      expect(service.createPrescription).toHaveBeenCalledWith(
+        'user-doc-1',
+        dto,
+      );
       expect(result.id).toBe('rx-999');
     });
   });

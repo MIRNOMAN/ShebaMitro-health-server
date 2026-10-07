@@ -44,7 +44,9 @@ export class WebPushService {
    */
   saveSubscription(patientId: string, subscription: PushSubscription) {
     this.subscriptions.set(patientId, subscription);
-    this.logger.log(`Stored Web Push VAPID subscription for patient ${patientId}`);
+    this.logger.log(
+      `Stored Web Push VAPID subscription for patient ${patientId}`,
+    );
   }
 
   /**
@@ -115,7 +117,8 @@ export class WebPushService {
     payloadData: ChronicRefillPushPayload,
   ): Promise<any> {
     const subscription = this.getSubscription(patientId);
-    const reorderEndpoint = payloadData.reorderEndpoint || `/api/v1/pharmacy/refill-order`;
+    const reorderEndpoint =
+      payloadData.reorderEndpoint || `/api/v1/pharmacy/refill-order`;
 
     const pushPayload = JSON.stringify({
       notification: {

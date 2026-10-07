@@ -73,7 +73,11 @@ describe('ReportOcrService', () => {
     };
 
     ocrEngine = {
-      detectTextFromScan: jest.fn().mockImplementation((buf, raw) => Promise.resolve(raw || 'HbA1c: 6.8%')),
+      detectTextFromScan: jest
+        .fn()
+        .mockImplementation((buf, raw) =>
+          Promise.resolve(raw || 'HbA1c: 6.8%'),
+        ),
       parseBiomarkersFromText: jest.fn().mockReturnValue([
         {
           markerKey: 'hba1c',
@@ -109,7 +113,11 @@ describe('ReportOcrService', () => {
         rawText: 'HbA1c: 6.8%',
       };
 
-      const result = await service.processReportScan('user-patient-100', Role.PATIENT, dto);
+      const result = await service.processReportScan(
+        'user-patient-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.success).toBe(true);
       expect(result.extractedCount).toBe(1);
@@ -129,7 +137,10 @@ describe('ReportOcrService', () => {
 
   describe('getBiomarkersAnalytics', () => {
     it('should return chronological data points formatted for frontend charting', async () => {
-      const result = await service.getBiomarkersAnalytics('patient-profile-100', { marker: 'hba1c' });
+      const result = await service.getBiomarkersAnalytics(
+        'patient-profile-100',
+        { marker: 'hba1c' },
+      );
 
       expect(result.patientId).toBe('patient-profile-100');
       expect(result.totalDataPoints).toBe(2);

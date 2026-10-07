@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsUUID, IsString, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsString,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 
 export class CallStateDto {
   @IsNotEmpty()

@@ -105,7 +105,8 @@ describe('PaymentsService', () => {
     bkashService = {
       createPayment: jest.fn().mockResolvedValue({
         paymentID: 'bkash_pay_123',
-        bkashURL: 'https://tokenized.sandbox.bka.sh/checkout/url?paymentID=bkash_pay_123',
+        bkashURL:
+          'https://tokenized.sandbox.bka.sh/checkout/url?paymentID=bkash_pay_123',
       }),
     };
 
@@ -173,12 +174,18 @@ describe('PaymentsService', () => {
 
       const result = await service.initiatePayment('user-pat-1', dto);
 
-      expect(stripeService.createPaymentIntent).toHaveBeenCalledWith(800, 'BDT', expect.any(Object));
+      expect(stripeService.createPaymentIntent).toHaveBeenCalledWith(
+        800,
+        'BDT',
+        expect.any(Object),
+      );
       expect(result.clientSecret).toBe('pi_stripe_123_secret_xyz');
     });
 
     it('should return existing transaction if idempotency key already exists', async () => {
-      prismaService.transaction.findUnique.mockResolvedValueOnce(mockTransaction);
+      prismaService.transaction.findUnique.mockResolvedValueOnce(
+        mockTransaction,
+      );
 
       const dto = {
         orderType: OrderType.APPOINTMENT,

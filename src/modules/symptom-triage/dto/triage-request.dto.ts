@@ -1,10 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class TriageRequestDto {
   @ApiProperty({
     description: 'Patient symptoms description',
-    example: 'Sudden onset chest pain radiating to left shoulder and shortness of breath',
+    example:
+      'Sudden onset chest pain radiating to left shoulder and shortness of breath',
   })
   @IsString()
   @IsNotEmpty()
@@ -19,7 +27,8 @@ export class TriageRequestDto {
   duration!: string;
 
   @ApiProperty({
-    description: 'Severity level (e.g. MILD, MODERATE, SEVERE, or numeric scale 1-10)',
+    description:
+      'Severity level (e.g. MILD, MODERATE, SEVERE, or numeric scale 1-10)',
     example: 'SEVERE',
   })
   @IsString()

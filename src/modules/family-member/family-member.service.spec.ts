@@ -63,7 +63,11 @@ describe('FamilyMemberService', () => {
           }
           return Promise.resolve(null);
         }),
-        update: jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...mockFamilyMember, ...data })),
+        update: jest
+          .fn()
+          .mockImplementation(({ data }) =>
+            Promise.resolve({ ...mockFamilyMember, ...data }),
+          ),
         delete: jest.fn().mockResolvedValue(mockFamilyMember),
       },
       patientProfile: {
@@ -89,7 +93,9 @@ describe('FamilyMemberService', () => {
         ]),
       },
       prescriptionItem: {
-        findUnique: jest.fn().mockResolvedValue({ id: 'item-500', medicineName: 'Napa Extend' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'item-500', medicineName: 'Napa Extend' }),
       },
       medicineReminder: {
         create: jest.fn().mockImplementation(({ data }) =>
@@ -136,7 +142,11 @@ describe('FamilyMemberService', () => {
         allergies: ['Penicillin'],
       };
 
-      const result = await service.createFamilyMember('user-primary-100', Role.PATIENT, dto);
+      const result = await service.createFamilyMember(
+        'user-primary-100',
+        Role.PATIENT,
+        dto,
+      );
 
       expect(result.primaryUserId).toBe('user-primary-100');
       expect(result.relation).toBe(FamilyRelation.PARENT);

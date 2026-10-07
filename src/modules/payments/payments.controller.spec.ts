@@ -15,7 +15,8 @@ describe('PaymentsController', () => {
     orderId: 'appt-123',
     amount: 1000,
     paymentGateway: PaymentGateway.BKASH,
-    paymentUrl: 'https://tokenized.sandbox.bka.sh/checkout/url?paymentID=bkash_pay_123',
+    paymentUrl:
+      'https://tokenized.sandbox.bka.sh/checkout/url?paymentID=bkash_pay_123',
     breakdown: { platformCommission: 150, providerAmount: 850 },
   };
 
@@ -59,7 +60,10 @@ describe('PaymentsController', () => {
 
       const result = await controller.initiatePayment('user-pat-1', dto);
 
-      expect(paymentsService.initiatePayment).toHaveBeenCalledWith('user-pat-1', dto);
+      expect(paymentsService.initiatePayment).toHaveBeenCalledWith(
+        'user-pat-1',
+        dto,
+      );
       expect(result.transactionId).toBe('tx-999');
     });
   });

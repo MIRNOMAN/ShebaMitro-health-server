@@ -86,7 +86,10 @@ describe('LabsController', () => {
 
       const result = await controller.createLabOrder('user-pat-1', dto);
 
-      expect(labsService.createLabOrder).toHaveBeenCalledWith('user-pat-1', dto);
+      expect(labsService.createLabOrder).toHaveBeenCalledWith(
+        'user-pat-1',
+        dto,
+      );
       expect(result.id).toBe('order-999');
     });
   });
@@ -102,7 +105,10 @@ describe('LabsController', () => {
 
       const result = await controller.assignTechnician('order-999', dto);
 
-      expect(labsService.assignTechnician).toHaveBeenCalledWith('order-999', dto);
+      expect(labsService.assignTechnician).toHaveBeenCalledWith(
+        'order-999',
+        dto,
+      );
       expect(result.dispatchedTechnician.name).toBe('Tariqul Islam');
     });
   });
@@ -112,7 +118,10 @@ describe('LabsController', () => {
       const mockFile = { buffer: Buffer.from('pdf') } as any;
       const result = await controller.uploadReport('order-999', mockFile);
 
-      expect(labsService.uploadReport).toHaveBeenCalledWith('order-999', mockFile);
+      expect(labsService.uploadReport).toHaveBeenCalledWith(
+        'order-999',
+        mockFile,
+      );
       expect(result.isEncrypted).toBe(true);
     });
   });

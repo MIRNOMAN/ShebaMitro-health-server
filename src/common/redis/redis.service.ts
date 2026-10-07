@@ -12,7 +12,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private redisClient!: Redis;
   private isMemoryFallback = false;
-  private readonly memoryStore = new Map<string, { value: string; expiresAt: number }>();
+  private readonly memoryStore = new Map<
+    string,
+    { value: string; expiresAt: number }
+  >();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -26,7 +29,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         port,
         retryStrategy: (times) => {
           if (times > 3) {
-            this.logger.warn('Redis connection retries exhausted. Activating in-memory fallback store.');
+            this.logger.warn(
+              'Redis connection retries exhausted. Activating in-memory fallback store.',
+            );
             this.isMemoryFallback = true;
             return null; // Stop retrying
           }
@@ -36,11 +41,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.redisClient.connect().catch((err) => {
-        this.logger.warn(`Redis client connect failed: ${err.message}. Using in-memory store.`);
+        this.logger.warn(
+          `Redis client connect failed: ${err.message}. Using in-memory store.`,
+        );
         this.isMemoryFallback = true;
       });
     } catch (err) {
-      this.logger.warn(`Failed to initialize Redis client. Using fallback. ${err}`);
+      this.logger.warn(
+        `Failed to initialize Redis client. Using fallback. ${err}`,
+      );
       this.isMemoryFallback = true;
     }
   }

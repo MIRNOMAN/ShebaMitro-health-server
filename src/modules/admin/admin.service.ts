@@ -103,8 +103,8 @@ export class AdminService {
     dto: VerifyProviderDto,
     adminUserId?: string,
   ) {
-    let providerType = 'DOCTOR';
-    let targetProfile = await this.prisma.doctorProfile.findFirst({
+    const providerType = 'DOCTOR';
+    const targetProfile = await this.prisma.doctorProfile.findFirst({
       where: {
         OR: [{ id: providerId }, { userId: providerId }],
       },
@@ -311,8 +311,13 @@ export class AdminService {
     let totalDisbursedAmount = 0;
 
     for (const payoutItem of dto.payouts) {
-      const { providerId, providerType, amount, paymentMethod, accountDetails } =
-        payoutItem;
+      const {
+        providerId,
+        providerType,
+        amount,
+        paymentMethod,
+        accountDetails,
+      } = payoutItem;
 
       try {
         let wallet = await this.prisma.wallet.findUnique({

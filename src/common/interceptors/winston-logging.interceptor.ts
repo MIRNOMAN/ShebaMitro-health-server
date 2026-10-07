@@ -29,14 +29,19 @@ export class WinstonLoggingInterceptor implements NestInterceptor {
     const { method, originalUrl, url, ip, headers, body, query } = request;
     const reqUrl = originalUrl || url;
     const startTime = Date.now();
-    const correlationId = (headers['x-correlation-id'] as string) || (headers['x-request-id'] as string) || `req-${Date.now()}`;
+    const correlationId =
+      (headers['x-correlation-id'] as string) ||
+      (headers['x-request-id'] as string) ||
+      `req-${Date.now()}`;
 
     // Mask sensitive PHI/PII in headers, body, and query parameters
     const maskedBody = body ? maskPhiPii(body) : undefined;
     const maskedQuery = query ? maskPhiPii(query) : undefined;
     const maskedHeaders = {
       ...headers,
-      authorization: headers.authorization ? 'Bearer [REDACTED_JWT_TOKEN]' : undefined,
+      authorization: headers.authorization
+        ? 'Bearer [REDACTED_JWT_TOKEN]'
+        : undefined,
       cookie: headers.cookie ? '[REDACTED_COOKIE]' : undefined,
     };
 
@@ -71,7 +76,9 @@ export class WinstonLoggingInterceptor implements NestInterceptor {
             },
           );
 
-          this.nestLogger.log(`${method} ${reqUrl} ${statusCode} — ${duration}ms`);
+          this.nestLogger.log(
+            `${method} ${reqUrl} ${statusCode} — ${duration}ms`,
+          );
         },
         error: (err: any) => {
           const duration = Date.now() - startTime;
@@ -94,7 +101,9 @@ export class WinstonLoggingInterceptor implements NestInterceptor {
             },
           );
 
-          this.nestLogger.error(`${method} ${reqUrl} ${statusCode} — ${duration}ms — ${err.message}`);
+          this.nestLogger.error(
+            `${method} ${reqUrl} ${statusCode} — ${duration}ms — ${err.message}`,
+          );
         },
       }),
     );

@@ -33,7 +33,10 @@ export class TeleconsultService {
    * Validate appointment time window (+-15 minutes of slot start), verify caller identity,
    * and generate dynamic RTC access token (Agora RtcTokenBuilder) with role-specific privileges.
    */
-  async generateRtcToken(userId: string, appointmentId: string): Promise<RtcTokenResult> {
+  async generateRtcToken(
+    userId: string,
+    appointmentId: string,
+  ): Promise<RtcTokenResult> {
     // 1. Fetch appointment details
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
@@ -44,7 +47,9 @@ export class TeleconsultService {
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
     }
 
     // 2. Fetch calling user details
@@ -59,7 +64,10 @@ export class TeleconsultService {
     // 3. Caller Identity Verification & Role Privileges
     const isDoctor = appointment.doctor.userId === userId;
     const isPatient = appointment.patient.userId === userId;
-    const isAssistant = user.role === Role.ADMIN || user.role === Role.LAB || user.role === Role.PHARMACY;
+    const isAssistant =
+      user.role === Role.ADMIN ||
+      user.role === Role.LAB ||
+      user.role === Role.PHARMACY;
 
     if (!isDoctor && !isPatient && !isAssistant) {
       this.logger.warn(
@@ -72,7 +80,9 @@ export class TeleconsultService {
 
     const isPublisher = isDoctor || isPatient;
     const rtcRoleNum = isPublisher ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
-    const roleString: 'PUBLISHER' | 'SUBSCRIBER' = isPublisher ? 'PUBLISHER' : 'SUBSCRIBER';
+    const roleString: 'PUBLISHER' | 'SUBSCRIBER' = isPublisher
+      ? 'PUBLISHER'
+      : 'SUBSCRIBER';
 
     // 4. Validate appointment time window (+-15 minutes of slot start to slot end)
     const now = Date.now();
@@ -94,7 +104,10 @@ export class TeleconsultService {
     }
 
     // 5. Generate dynamic RTC access token using Agora RtcTokenBuilder
-    const appId = this.configService.get<string>('AGORA_APP_ID', 'shebamitro_agora_app_id');
+    const appId = this.configService.get<string>(
+      'AGORA_APP_ID',
+      'shebamitro_agora_app_id',
+    );
     const appCertificate = this.configService.get<string>(
       'AGORA_APP_CERTIFICATE',
       'shebamitro_agora_app_cert',

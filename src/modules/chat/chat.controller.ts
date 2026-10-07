@@ -12,7 +12,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat.service.js';
 import { ChatGateway } from './chat.gateway.js';
@@ -35,7 +41,8 @@ export class ChatController {
   @Get(':appointmentId/messages')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get paginated conversation messages for an appointment using cursor engine',
+    summary:
+      'Get paginated conversation messages for an appointment using cursor engine',
   })
   @ResponseMessage('Messages fetched successfully')
   async getMessages(
@@ -43,7 +50,11 @@ export class ChatController {
     @Query() cursorDto: CursorPaginationDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.chatService.getPaginatedMessages(userId, appointmentId, cursorDto);
+    return this.chatService.getPaginatedMessages(
+      userId,
+      appointmentId,
+      cursorDto,
+    );
   }
 
   @Post(':appointmentId/attachments')
@@ -51,14 +62,22 @@ export class ChatController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Upload patient scan or doctor report attachment to S3 and broadcast over WebSocket room',
+    summary:
+      'Upload patient scan or doctor report attachment to S3 and broadcast over WebSocket room',
   })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { type: 'string', format: 'binary', description: 'Patient scan or doctor report file' },
-        note: { type: 'string', description: 'Optional text note accompanying the file' },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Patient scan or doctor report file',
+        },
+        note: {
+          type: 'string',
+          description: 'Optional text note accompanying the file',
+        },
       },
     },
   })
@@ -74,18 +93,20 @@ export class ChatController {
     }
 
     // 1. Validate assigned doctor/patient room access
-    const { isAssignedDoctor } = await this.chatService.validateAppointmentAccess(
-      userId,
-      appointmentId,
-    );
+    const { isAssignedDoctor } =
+      await this.chatService.validateAppointmentAccess(userId, appointmentId);
 
     const fileTypeLabel = isAssignedDoctor ? 'Doctor Report' : 'Patient Scan';
 
     // 2. Upload file to S3 and generate 7-day presigned URL
-    const uploadResult = await this.s3Service.uploadAttachment(file, appointmentId);
+    const uploadResult = await this.s3Service.uploadAttachment(
+      file,
+      appointmentId,
+    );
 
     // 3. Save message record in Message database table
-    const content = dto?.note || `[${fileTypeLabel}: ${uploadResult.originalName}]`;
+    const content =
+      dto?.note || `[${fileTypeLabel}: ${uploadResult.originalName}]`;
     const message = await this.chatService.saveMessage(
       userId,
       appointmentId,
@@ -117,7 +138,10 @@ export class ChatController {
     @Param('appointmentId') appointmentId: string,
     @CurrentUser('id') userId: string,
   ) {
-    const result = await this.chatService.markRoomReadReceipts(userId, appointmentId);
+    const result = await this.chatService.markRoomReadReceipts(
+      userId,
+      appointmentId,
+    );
 
     // Broadcast read receipts event over WebSocket room
     this.chatGateway.broadcastReadReceipts(appointmentId, userId, result.count);

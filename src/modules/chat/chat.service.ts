@@ -1,4 +1,9 @@
-import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { PrismaService } from '../../database/prisma.service.js';
 import { PaginationService } from '../../common/pagination/pagination.service.js';
@@ -26,7 +31,9 @@ export class ChatService {
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
+      throw new NotFoundException(
+        `Appointment with ID ${appointmentId} not found`,
+      );
     }
 
     const isAssignedDoctor = appointment.doctor.userId === userId;
