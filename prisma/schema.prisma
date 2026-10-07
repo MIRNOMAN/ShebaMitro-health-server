@@ -89,6 +89,13 @@ enum TransactionStatus {
   REFUNDED
 }
 
+enum VitalType {
+  HEART_RATE
+  BP
+  GLUCOSE
+  SPO2
+}
+
 // ──────────────────────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────────────────────
@@ -137,6 +144,8 @@ model PatientProfile {
   reminders        MedicineReminder[]
   labOrders        LabOrder[]
   pharmacyOrders   PharmacyOrder[]
+  biometricVitals  BiometricVital[]
+  vitalAlerts      VitalAlert[]
 
   @@map("patient_profiles")
 }
@@ -166,6 +175,7 @@ model DoctorProfile {
   availabilities  DoctorAvailability[]
   appointments    Appointment[]
   prescriptions   Prescription[]
+  vitalAlerts     VitalAlert[]
 
   @@index([specialization])
   @@index([consultFee])
@@ -471,4 +481,46 @@ model Payout {
   @@index([status])
   @@map("payouts")
 }
+
+model BiometricVital {
+  id             String         @id @default(uuid())
+  patientId      String         @map("patient_id")
+  patient        PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  type           VitalType
+  value          Float
+  unit           String
+  recordedAt     DateTime       @map("recorded_at")
+  idempotencyKey String?        @unique @map("idempotency_key")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  alerts         VitalAlert[]
+
+  @@index([patientId, recordedAt])
+  @@index([patientId, type])
+  @@map("biometric_vitals")
+}
+
+model VitalAlert {
+  id             String          @id @default(uuid())
+  patientId      String          @map("patient_id")
+  patient        PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId       String?         @map("doctor_id")
+  doctor         DoctorProfile?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  vitalId        String?         @map("vital_id")
+  vital          BiometricVital? @relation(fields: [vitalId], references: [id], onDelete: Cascade)
+  vitalType      VitalType       @map("vital_type")
+  value          Float
+  unit           String
+  threshold      String
+  severity       String          @default("EMERGENCY")
+  message        String
+  isAcknowledged Boolean         @default(false) @map("is_acknowledged")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("vital_alerts")
+}
+
 
