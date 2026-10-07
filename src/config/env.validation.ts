@@ -16,11 +16,13 @@ export const envSchema = z.object({
     .string()
     .min(1, 'DATABASE_URL environment variable is required.'),
 
-  // JWT
+  // JWT & Admin
   JWT_SECRET: z
     .string()
     .min(8, 'JWT_SECRET must be at least 8 characters long.'),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().optional(),
 
   // Redis
   REDIS_HOST: z

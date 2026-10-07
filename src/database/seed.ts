@@ -15,7 +15,9 @@ async function main() {
     '🌱 Starting database seed with 10 dummy providers across all roles...',
   );
 
-  const passwordHash = await argon2.hash('Password123!');
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@shebamitro.health';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Password123!';
+  const passwordHash = await argon2.hash(adminPassword);
 
   // Clear existing records safely in order of dependency
   await prisma.medicineReminder.deleteMany();
@@ -35,7 +37,7 @@ async function main() {
   console.log(' Creating Admin users...');
   await prisma.user.create({
     data: {
-      email: 'system.admin@shebamitro.com',
+      email: adminEmail,
       phone: '+8801700000001',
       passwordHash,
       role: Role.ADMIN,
