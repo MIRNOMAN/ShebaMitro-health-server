@@ -15,6 +15,8 @@ import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
@@ -116,6 +118,33 @@ export class AuthController {
     };
   }
 
+  @Public()
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request 6-digit OTP code to reset password' })
+  @ResponseMessage('Reset code sent successfully')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify reset OTP code and set new password' })
+  @ResponseMessage('Password reset successfully')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user and revoke refresh tokens' })
@@ -124,16 +153,13 @@ export class AuthController {
     @CurrentUser('id') userId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (userId) {
-      await this.authService.logout(userId);
-    }
-
+    await this.authService.logout(userId);
     this.clearAuthCookies(res);
     return { success: true };
   }
 
   /**
-   * Helper to set HttpOnly, Secure, SameSite:Strict cookies on response.
+   * Helper to set HttpOnly, Secure, SameSite:Lax cookies on response.
    */
   private setAuthCookies(
     res: Response,
@@ -145,15 +171,16 @@ export class AuthController {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
-      path: '/api/v1/auth',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
@@ -162,7 +189,19 @@ export class AuthController {
    * Helper to clear auth cookies.
    */
   private clearAuthCookies(res: Response): void {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/api/v1/auth' });
+    const isProduction = process.env.NODE_ENV === 'production';
+    const clearOpts = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+
+    res.clearCookie('access_token', clearOpts);
+    res.clearCookie('refresh_token', clearOpts);
+    res.clearCookie('refresh_token', { ...clearOpts, path: '/api/v1/auth' });
+    res.clearCookie('sheba_session', { path: '/' });
+    res.clearCookie('sheba_token', { path: '/' });
+    res.clearCookie('sheba_role', { path: '/' });
   }
 }

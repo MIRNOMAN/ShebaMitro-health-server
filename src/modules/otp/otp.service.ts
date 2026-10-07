@@ -35,7 +35,15 @@ export class OtpService {
    * Request a 6-digit cryptographically secure OTP with rate limiting.
    */
   async requestOtp(dto: RequestOtpDto) {
-    const { phone } = dto;
+    const rawPhone = dto.phone.trim();
+    const phone = rawPhone.startsWith('+88')
+      ? rawPhone
+      : rawPhone.startsWith('88')
+      ? `+${rawPhone}`
+      : rawPhone.startsWith('0')
+      ? `+88${rawPhone}`
+      : `+880${rawPhone}`;
+
     const attemptKey = `otp_attempts:${phone}`;
 
     // Increment attempts counter
@@ -62,20 +70,24 @@ export class OtpService {
     // Generate cryptographically secure 6-digit numeric OTP
     const otpCode = crypto.randomInt(100000, 1000000).toString();
 
-    // Store in Redis with 3-minute TTL
+    // Store in Redis with 3-minute TTL (both raw & normalized)
     const otpKey = `otp:${phone}`;
     await this.redisService.set(otpKey, otpCode, OTP_TTL_SECONDS);
+    if (rawPhone !== phone) {
+      await this.redisService.set(`otp:${rawPhone}`, otpCode, OTP_TTL_SECONDS);
+    }
 
     // Send SMS via configured SMS adapter
     const smsMessage = `Your ShebaMitro verification code is: ${otpCode}. Valid for 3 minutes.`;
     await this.smsAdapter.sendSms(phone, smsMessage);
 
-    this.logger.log(`OTP generated for ${phone}: ${otpCode}`);
+    this.logger.log(`OTP generated for ${phone} (${rawPhone}): ${otpCode}`);
 
     return {
       message: 'OTP sent successfully',
       phone,
       ttlSeconds: OTP_TTL_SECONDS,
+      demoOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
     };
   }
 
@@ -83,54 +95,62 @@ export class OtpService {
    * Verify OTP code and update user verification status.
    */
   async verifyOtp(dto: VerifyOtpDto) {
-    const { phone, code } = dto;
+    const rawPhone = dto.phone.trim();
+    const phone = rawPhone.startsWith('+88')
+      ? rawPhone
+      : rawPhone.startsWith('88')
+      ? `+${rawPhone}`
+      : rawPhone.startsWith('0')
+      ? `+88${rawPhone}`
+      : `+880${rawPhone}`;
+
+    const code = dto.code.trim();
     const otpKey = `otp:${phone}`;
 
-    const storedOtp = await this.redisService.get(otpKey);
+    let storedOtp = await this.redisService.get(otpKey);
+    if (!storedOtp && rawPhone !== phone) {
+      storedOtp = await this.redisService.get(`otp:${rawPhone}`);
+    }
 
-    if (!storedOtp || storedOtp !== code) {
+    // Allow testing demo OTP 123456 in dev mode or match stored OTP
+    const isDev = process.env.NODE_ENV !== 'production';
+    const isMatched = storedOtp === code || (isDev && code === '123456');
+
+    if (!isMatched) {
       throw new BadRequestException('Invalid or expired OTP code.');
     }
 
     // Clear OTP from Redis once verified
     await this.redisService.del(otpKey);
+    if (rawPhone !== phone) await this.redisService.del(`otp:${rawPhone}`);
 
     // Find User by phone if existing
-    const user = await this.prisma.user.findFirst({
-      where: { phone },
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ phone }, { phone: rawPhone }],
+      },
     });
 
-    let updatedUser = null;
-    let userId = null;
-    let role = 'PATIENT';
-    let email = null;
-
     if (user) {
-      updatedUser = await this.prisma.user.update({
+      user = await this.prisma.user.update({
         where: { id: user.id },
         data: { isVerified: true },
       });
-      userId = user.id;
-      role = user.role;
-      email = user.email;
     }
 
     // Generate onboarding claim tokens
     const secret = this.configService.get<string>('JWT_SECRET');
-    const onboardingClaims = {
-      isVerified: true,
-      onboardingCompleted: true,
-      canAccessOnboarding: true,
-    };
+    const userId = user?.id || 'otp-user-' + Date.now();
+    const userRole = user?.role || 'PATIENT';
+    const userEmail = user?.email || `${phone.replace(/\D/g, '')}@shebamitro.health`;
 
     const accessToken = this.jwtService.sign(
       {
         sub: userId,
-        email,
+        email: userEmail,
         phone,
-        role,
+        role: userRole,
         isVerified: true,
-        onboardingClaims,
       },
       {
         secret,
@@ -138,20 +158,21 @@ export class OtpService {
       },
     );
 
+    const rawRefreshToken = crypto.randomBytes(40).toString('hex') + '.' + userId;
+
     return {
       message: 'OTP verified successfully',
       isVerified: true,
-      onboardingClaims,
-      user: updatedUser
-        ? {
-            id: updatedUser.id,
-            email: updatedUser.email,
-            phone: updatedUser.phone,
-            role: updatedUser.role,
-            isVerified: updatedUser.isVerified,
-          }
-        : null,
+      user: {
+        id: userId,
+        email: userEmail,
+        phone: user?.phone || phone,
+        role: userRole,
+        isVerified: true,
+      },
       accessToken,
+      refreshToken: rawRefreshToken,
+      expiresIn: 15 * 60,
     };
   }
 }

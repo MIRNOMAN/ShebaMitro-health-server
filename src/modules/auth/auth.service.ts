@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -10,12 +11,16 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service.js';
+import { RedisService } from '../../common/redis/redis.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { Role } from '@prisma/client';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes lockout
+const RESET_OTP_TTL_SECONDS = 600; // 10 minutes
 
 @Injectable()
 export class AuthService {
@@ -23,6 +28,7 @@ export class AuthService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -189,14 +195,132 @@ export class AuthService {
   }
 
   /**
+   * Send 6-digit OTP code for password reset to email or phone.
+   */
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const identifier = dto.identifier.trim().toLowerCase();
+
+    // Check if user exists by email or phone
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: identifier }, { phone: dto.identifier.trim() }],
+      },
+    });
+
+    if (!user) {
+      // In dev return clear error, in production return generic response
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          message:
+            'If an account exists with this credential, a password reset code has been sent.',
+          identifier,
+          ttlSeconds: RESET_OTP_TTL_SECONDS,
+        };
+      }
+      throw new BadRequestException('No account found with this email/phone.');
+    }
+
+    // Generate 6-digit numeric reset code
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+
+    // Store in Redis with 10-minute TTL
+    const otpKey = `reset_otp:${identifier}`;
+    await this.redisService.set(otpKey, otpCode, RESET_OTP_TTL_SECONDS);
+
+    // Also store under phone if different
+    if (user.phone && user.phone !== identifier) {
+      await this.redisService.set(
+        `reset_otp:${user.phone}`,
+        otpCode,
+        RESET_OTP_TTL_SECONDS,
+      );
+    }
+    if (user.email && user.email !== identifier) {
+      await this.redisService.set(
+        `reset_otp:${user.email.toLowerCase()}`,
+        otpCode,
+        RESET_OTP_TTL_SECONDS,
+      );
+    }
+
+    this.logger.log(`Password reset OTP for ${identifier}: ${otpCode}`);
+
+    return {
+      message: 'Password reset OTP code sent successfully',
+      identifier,
+      ttlSeconds: RESET_OTP_TTL_SECONDS,
+      demoCode: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
+    };
+  }
+
+  /**
+   * Verify reset OTP and set new password with Argon2 hashing.
+   */
+  async resetPassword(dto: ResetPasswordDto) {
+    const identifier = dto.identifier.trim().toLowerCase();
+    const otpKey = `reset_otp:${identifier}`;
+
+    const storedOtp = await this.redisService.get(otpKey);
+
+    if (!storedOtp || storedOtp !== dto.code.trim()) {
+      throw new BadRequestException('Invalid or expired OTP code.');
+    }
+
+    // Find user by email or phone
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: identifier }, { phone: dto.identifier.trim() }],
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User account not found.');
+    }
+
+    // Hash new password using Argon2
+    const passwordHash = await argon2.hash(dto.newPassword);
+
+    // Update user in DB, reset lockout and failed attempts, revoke previous sessions
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        refreshTokenHash: null,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      },
+    });
+
+    // Clear reset OTP
+    await this.redisService.del(otpKey);
+    if (user.phone) await this.redisService.del(`reset_otp:${user.phone}`);
+    if (user.email)
+      await this.redisService.del(`reset_otp:${user.email.toLowerCase()}`);
+
+    this.logger.log(`Password successfully reset for user: ${user.email}`);
+
+    return {
+      success: true,
+      message:
+        'Password has been reset successfully. Please log in with your new password.',
+    };
+  }
+
+  /**
    * Revoke refresh token and log out user.
    */
-  async logout(userId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshTokenHash: null },
-    });
-    return { message: 'Logged out successfully' };
+  async logout(userId?: string) {
+    if (userId) {
+      try {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { refreshTokenHash: null },
+        });
+      } catch (err) {
+        this.logger.warn(`Failed to clear refreshTokenHash for logout: ${err}`);
+      }
+    }
+    return { success: true, message: 'Logged out successfully' };
   }
 
   /**
