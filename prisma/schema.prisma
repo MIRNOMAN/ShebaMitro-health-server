@@ -96,6 +96,12 @@ enum VitalType {
   SPO2
 }
 
+enum FamilyRelation {
+  PARENT
+  SPOUSE
+  CHILD
+}
+
 // ──────────────────────────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────────────────────────
@@ -120,6 +126,7 @@ model User {
   labProfile          LabProfile?
   pharmacyProfile     PharmacyProfile?
   messages            Message[]
+  familyMembers       FamilyMember[]
 
   @@index([email, role])
   @@index([phone, isVerified])
@@ -146,6 +153,7 @@ model PatientProfile {
   pharmacyOrders   PharmacyOrder[]
   biometricVitals  BiometricVital[]
   vitalAlerts      VitalAlert[]
+  emergencyRequests EmergencyRequest[]
 
   @@map("patient_profiles")
 }
@@ -266,6 +274,8 @@ model Appointment {
   status        AppointmentStatus @default(PENDING)
   paymentStatus PaymentStatus     @default(UNPAID) @map("payment_status")
   meetingRoomId String?           @map("meeting_room_id")
+  familyMemberId String?          @map("family_member_id")
+  familyMember   FamilyMember?    @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   notes         String?
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
@@ -299,6 +309,8 @@ model Prescription {
   isDispensed           Boolean            @default(false) @map("is_dispensed")
   dispensedAt           DateTime?          @map("dispensed_at")
   dispensedByPharmacyId String?            @map("dispensed_by_pharmacy_id")
+  familyMemberId        String?            @map("family_member_id")
+  familyMember          FamilyMember?      @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   deletedAt             DateTime?          @map("deleted_at")
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
@@ -339,6 +351,8 @@ model MedicineReminder {
   intakeTime         DateTime         @map("intake_time")
   status             ReminderStatus   @default(PENDING)
   acknowledgedAt     DateTime?        @map("acknowledged_at")
+  familyMemberId     String?          @map("family_member_id")
+  familyMember       FamilyMember?    @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt @map("updated_at")
 
@@ -522,5 +536,85 @@ model VitalAlert {
   @@index([doctorId])
   @@map("vital_alerts")
 }
+
+model EmergencyRequest {
+  id                    String          @id @default(uuid())
+  patientId             String?         @map("patient_id")
+  patient               PatientProfile? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  latitude              Float
+  longitude             Float
+  status                String          @default("DISPATCHED")
+  trackingToken         String          @unique @map("tracking_token")
+  trackingExpiresAt     DateTime        @map("tracking_expires_at")
+  dispatchedAmbulanceId String?         @map("dispatched_ambulance_id")
+  dispatchedAmbulance   Ambulance?      @relation(fields: [dispatchedAmbulanceId], references: [id], onDelete: SetNull)
+  nearestHospitalId     String?         @map("nearest_hospital_id")
+  nearestHospital       Hospital?       @relation(fields: [nearestHospitalId], references: [id], onDelete: SetNull)
+  notes                 String?
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+
+  @@index([patientId])
+  @@index([status])
+  @@map("emergency_requests")
+}
+
+model Ambulance {
+  id            String             @id @default(uuid())
+  driverName    String             @map("driver_name")
+  driverPhone   String             @map("driver_phone")
+  vehicleNumber String             @unique @map("vehicle_number")
+  isVerified    Boolean            @default(true) @map("is_verified")
+  isAvailable   Boolean            @default(true) @map("is_available")
+  latitude      Float
+  longitude     Float
+  hospitalName  String?            @map("hospital_name")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  dispatches    EmergencyRequest[]
+
+  @@map("ambulances")
+}
+
+model Hospital {
+  id                String             @id @default(uuid())
+  name              String
+  address           String
+  phone             String
+  isVerified        Boolean            @default(true) @map("is_verified")
+  latitude          Float
+  longitude         Float
+  emergencyServices String[]           @default(["ICU", "TRAUMA", "AMBULANCE"]) @map("emergency_services")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  emergencies       EmergencyRequest[]
+
+  @@map("hospitals")
+}
+
+model FamilyMember {
+  id            String         @id @default(uuid())
+  primaryUserId String         @map("primary_user_id")
+  primaryUser   User           @relation(fields: [primaryUserId], references: [id], onDelete: Cascade)
+  fullName      String         @map("full_name")
+  relation      FamilyRelation
+  dob           DateTime?      @map("dob")
+  gender        String?        @map("gender")
+  bloodGroup    String?        @map("blood_group")
+  allergies     String[]       @default([])
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  reminders     MedicineReminder[]
+
+  @@index([primaryUserId])
+  @@map("family_members")
+}
+
+
 
 

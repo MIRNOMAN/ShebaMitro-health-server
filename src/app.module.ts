@@ -30,6 +30,8 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { SymptomTriageModule } from './modules/symptom-triage/symptom-triage.module.js';
 import { ClinicalAiModule } from './modules/clinical-ai/clinical-ai.module.js';
 import { VitalsSyncModule } from './modules/vitals-sync/vitals-sync.module.js';
+import { EmergencyModule } from './modules/emergency/emergency.module.js';
+import { FamilyMemberModule } from './modules/family-member/family-member.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -81,6 +83,8 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     SymptomTriageModule,
     ClinicalAiModule,
     VitalsSyncModule,
+    EmergencyModule,
+    FamilyMemberModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation
