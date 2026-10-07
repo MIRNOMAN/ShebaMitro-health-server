@@ -8,22 +8,24 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { OtpService } from './otp.service.js';
 import { RequestOtpDto } from './dto/request-otp.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
-@ApiTags('OTP Authentication')
+@ApiTags('Auth')
 @Controller('auth')
 export class OtpController {
   constructor(private readonly otpService: OtpService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
   @Post('request-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Request a 6-digit OTP code (Rate limit: max 3 attempts per 10 minutes)',
+    summary: 'Request a 6-digit OTP code (Rate limit: 5 req/min, max 3 attempts per 10 minutes)',
   })
   @ResponseMessage('OTP code requested successfully')
   async requestOtp(@Body() dto: RequestOtpDto) {
@@ -31,9 +33,10 @@ export class OtpController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify OTP code and issue onboarding claims' })
+  @ApiOperation({ summary: 'Verify OTP code and issue onboarding claims (Rate limited to 5 req/min)' })
   @ResponseMessage('OTP verified successfully')
   async verifyOtp(
     @Body() dto: VerifyOtpDto,

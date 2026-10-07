@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { PharmacyService } from './pharmacy.service.js';
 import { ChronicRefillService } from './chronic-refill.service.js';
@@ -19,7 +20,7 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
-@ApiTags('Pharmacy & Medicine Orders')
+@ApiTags('Pharmacy & Medicine Orders', 'Refills')
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Controller('pharmacy')
@@ -29,11 +30,12 @@ export class PharmacyController {
     private readonly chronicRefillService: ChronicRefillService,
   ) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60000 }, checkout: { limit: 5, ttl: 60000 } })
   @Post('orders')
   @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Convert verified prescription items into a pharmacy cart order (Patient only)',
+    summary: 'Convert verified prescription items into a pharmacy cart order (Rate limited: 5 req/min)',
     description:
       'Converts prescribed medication items from a verified medical prescription into an actionable pharmacy cart order for delivery.',
   })
@@ -45,11 +47,12 @@ export class PharmacyController {
     return this.pharmacyService.createCartOrder(userId, dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 }, checkout: { limit: 5, ttl: 60000 } })
   @Post('refill-order')
   @Roles(Role.PATIENT, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: '1-click chronic medicine refill re-order (Patient only)',
+    summary: '1-click chronic medicine refill re-order (Rate limited: 5 req/min)',
     description:
       'Automatically provisions a refill order with patient preferred partner pharmacy, computes standard maintenance quantity and delivery fee, and schedules the next cycle reminder.',
   })

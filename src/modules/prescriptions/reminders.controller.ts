@@ -18,7 +18,7 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
-@ApiTags('Medicine Reminders')
+@ApiTags('Alarms', 'Medicine Reminders')
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Controller('reminders')

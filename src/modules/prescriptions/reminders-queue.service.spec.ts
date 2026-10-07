@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../../database/prisma.service.js';
 import { WebPushService } from './web-push.service.js';
 import { WhatsAppService } from './whatsapp.service.js';
+import { AudioReminderService } from './audio-reminder.service.js';
 
 describe('RemindersQueueService & RemindersProcessor', () => {
   let queueService: RemindersQueueService;
@@ -17,6 +18,7 @@ describe('RemindersQueueService & RemindersProcessor', () => {
   let prismaService: any;
   let webPushService: any;
   let whatsAppService: any;
+  let audioReminderService: any;
 
   beforeEach(async () => {
     mockQueue = {
@@ -40,6 +42,7 @@ describe('RemindersQueueService & RemindersProcessor', () => {
           prescriptionItem: {
             medicineName: 'Napa Extra',
             schedulePattern: '1+0+1',
+            prescription: { diagnosis: 'Fever and headache' },
           },
           patient: {
             user: {
@@ -59,6 +62,14 @@ describe('RemindersQueueService & RemindersProcessor', () => {
       sendFallbackTemplateMessage: jest.fn().mockResolvedValue({ success: true }),
     };
 
+    audioReminderService = {
+      processAudioReminder: jest.fn().mockResolvedValue({
+        reminderId: 'rem-abc-123',
+        voiceNoteSent: true,
+        ivrCallTriggered: false,
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RemindersQueueService,
@@ -70,6 +81,7 @@ describe('RemindersQueueService & RemindersProcessor', () => {
         { provide: PrismaService, useValue: prismaService },
         { provide: WebPushService, useValue: webPushService },
         { provide: WhatsAppService, useValue: whatsAppService },
+        { provide: AudioReminderService, useValue: audioReminderService },
       ],
     }).compile();
 

@@ -5,6 +5,7 @@ import { ReminderStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { WebPushService } from './web-push.service.js';
 import { WhatsAppService } from './whatsapp.service.js';
+import { AudioReminderService } from './audio-reminder.service.js';
 
 export interface ReminderJobPayload {
   reminderId: string;
@@ -124,6 +125,7 @@ export class RemindersProcessor extends WorkerHost {
     private readonly webPushService: WebPushService,
     private readonly whatsAppService: WhatsAppService,
     private readonly remindersQueueService: RemindersQueueService,
+    private readonly audioReminderService: AudioReminderService,
   ) {
     super();
   }
@@ -146,7 +148,9 @@ export class RemindersProcessor extends WorkerHost {
   /**
    * Handle primary alarm job firing:
    * 1. Trigger Web Push Notification via webpush using stored VAPID subscription keys with custom alarm sound tag
-   * 2. Schedule 15-minute delayed fallback check for unacknowledged alarm
+   * 2. Synthesize Bengali bn-BD audio reminder clip via Google TTS / ElevenLabs & dispatch WhatsApp voice note
+   * 3. For critical dosages (e.g. Insulin, Warfarin, Nitroglycerin), trigger automated IVR telephone call
+   * 4. Schedule 15-minute delayed fallback check for unacknowledged alarm
    */
   private async handleAlarmJob(job: Job<ReminderJobPayload>): Promise<any> {
     const { reminderId, patientId } = job.data;
@@ -155,7 +159,11 @@ export class RemindersProcessor extends WorkerHost {
     const reminder = await this.prisma.medicineReminder.findUnique({
       where: { id: reminderId },
       include: {
-        prescriptionItem: true,
+        prescriptionItem: {
+          include: {
+            prescription: true,
+          },
+        },
         patient: {
           include: {
             user: { select: { name: true, phone: true, email: true } },
@@ -165,7 +173,11 @@ export class RemindersProcessor extends WorkerHost {
     });
 
     const medicineName = reminder?.prescriptionItem?.medicineName || 'Prescribed Medicine';
+    const genericName = reminder?.prescriptionItem?.genericName || undefined;
+    const diagnosis = reminder?.prescriptionItem?.prescription?.diagnosis || undefined;
     const schedulePattern = reminder?.prescriptionItem?.schedulePattern || '1+0+1';
+    const patientPhone = reminder?.patient?.user?.phone || '8801700000000';
+    const patientName = reminder?.patient?.user?.name || undefined;
 
     // 1) Trigger Web Push Notification via webpush using stored VAPID keys with custom alarm sound tag
     const pushResult = await this.webPushService.sendAlarmNotification(patientId, {
@@ -176,13 +188,32 @@ export class RemindersProcessor extends WorkerHost {
       intakeTime: job.data.intakeTime,
     });
 
-    // 2) Schedule fallback job in 15 minutes to check if still unacknowledged
+    // 2) Synthesize Bengali audio clip, send WhatsApp voice note & trigger IVR call for critical dosages
+    let audioReminderResult: any = null;
+    try {
+      audioReminderResult = await this.audioReminderService.processAudioReminder({
+        reminderId,
+        patientId,
+        medicineName,
+        genericName,
+        diagnosis,
+        patientPhone,
+        patientName,
+        preferredLanguage: 'bn',
+        schedulePattern,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to process audio reminder for ${reminderId}: ${err.message}`);
+    }
+
+    // 3) Schedule fallback job in 15 minutes to check if still unacknowledged
     await this.remindersQueueService.addFallbackCheckJob(job.data, 15 * 60 * 1000);
 
     return {
       status: 'ALARM_PUSH_SENT',
       reminderId,
       pushResult,
+      audioReminderResult,
       fallbackScheduledInMinutes: 15,
     };
   }

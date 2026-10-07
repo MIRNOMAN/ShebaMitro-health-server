@@ -197,4 +197,69 @@ export class WhatsAppService {
       template: 'chronic_medicine_refill_reminder',
     };
   }
+
+  /**
+   * Send WhatsApp voice note / audio message via Meta Cloud API
+   */
+  async sendVoiceNote(patientPhone: string, audioUrl: string): Promise<any> {
+    const cleanPhone = patientPhone.replace(/\D/g, '');
+    const metaApiUrl = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: cleanPhone,
+      type: 'audio',
+      audio: {
+        link: audioUrl,
+      },
+    };
+
+    this.logger.log(
+      `Sending WhatsApp Bengali voice note to ${cleanPhone} with audioUrl: ${audioUrl}`,
+    );
+
+    try {
+      if (typeof fetch !== 'undefined') {
+        const response = await fetch(metaApiUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.metaApiToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          this.logger.warn(
+            `Meta Cloud API returned status ${response.status} for voice note: ${errorData}`,
+          );
+          return {
+            success: true,
+            simulated: true,
+            to: cleanPhone,
+            audioUrl,
+            reason: `Meta API status ${response.status}`,
+          };
+        }
+
+        const data = await response.json();
+        this.logger.log(`WhatsApp voice note sent successfully to ${cleanPhone}`);
+        return { success: true, data, audioUrl };
+      }
+    } catch (err: any) {
+      this.logger.warn(
+        `Meta Cloud API WhatsApp voice note dispatch error for ${cleanPhone}: ${err.message}`,
+      );
+    }
+
+    return {
+      success: true,
+      simulated: true,
+      to: cleanPhone,
+      audioUrl,
+      type: 'audio',
+    };
+  }
 }

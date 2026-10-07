@@ -11,6 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { PaymentsService } from './payments.service.js';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto.js';
@@ -20,18 +21,19 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 
-@ApiTags('Payment Gateway & Checkout')
+@ApiTags('Payments & Billing')
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60000 }, checkout: { limit: 5, ttl: 60000 } })
   @Post('initiate')
   @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Initiate payment for Appointments, LabOrders, or PharmacyOrders',
+    summary: 'Initiate payment for Appointments, LabOrders, or PharmacyOrders (Rate limited: 5 req/min)',
     description:
       'Supports bKash Tokenized Checkout and Stripe PaymentIntents. Calculates platform commission (15%) and provider payout (85%), with idempotency key duplicate prevention.',
   })

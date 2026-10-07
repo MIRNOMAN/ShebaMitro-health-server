@@ -10,6 +10,7 @@ import { PdfRendererService } from './pdf-renderer.service.js';
 import { DosageParserService } from './dosage-parser.service.js';
 import { WebPushService } from './web-push.service.js';
 import { WhatsAppService } from './whatsapp.service.js';
+import { AudioReminderService } from './audio-reminder.service.js';
 import {
   RemindersQueueService,
   RemindersProcessor,
@@ -33,6 +34,7 @@ import {
     RemindersProcessor,
     WebPushService,
     WhatsAppService,
+    AudioReminderService,
     S3Service,
   ],
   exports: [
@@ -43,6 +45,7 @@ import {
     RemindersQueueService,
     WebPushService,
     WhatsAppService,
+    AudioReminderService,
     S3Service,
   ],
 })

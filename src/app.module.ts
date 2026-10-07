@@ -1,3 +1,4 @@
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -46,6 +47,25 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
       validate: validateEnv,
       load: [appConfig, databaseConfig, jwtConfig, redisConfig, awsConfig],
     }),
+
+    // ── Throttler Rate Limiting (100 req/min general, 5 req/min auth/checkout) ──
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 100, // 100 req/min general
+      },
+      {
+        name: 'auth',
+        ttl: 60000,
+        limit: 5,   // 5 req/min on auth
+      },
+      {
+        name: 'checkout',
+        ttl: 60000,
+        limit: 5,   // 5 req/min on checkout
+      },
+    ]),
 
     // ── BullMQ Queue Configuration ──────────────────────────────
     BullModule.forRootAsync({
@@ -111,6 +131,11 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
       provide: APP_INTERCEPTOR,
       useClass: ApiResponseInterceptor,
     },
+    // Global Rate Limiting Guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     // Global JWT Auth Guard (routes are protected by default unless marked @Public())
     {
       provide: APP_GUARD,
@@ -119,3 +144,4 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
   ],
 })
 export class AppModule {}
+

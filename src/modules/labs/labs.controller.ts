@@ -31,7 +31,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 
-@ApiTags('Lab Diagnostic Services')
+@ApiTags('Labs', 'Lab Diagnostic Services')
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Controller('labs')

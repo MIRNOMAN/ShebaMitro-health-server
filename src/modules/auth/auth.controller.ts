@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -18,15 +19,16 @@ import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
-@ApiTags('Authentication')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register a new user' })
+  @ApiOperation({ summary: 'Register a new user (Rate limited to 5 req/min)' })
   @ResponseMessage('Registration successful')
   async register(
     @Body() registerDto: RegisterDto,
@@ -44,9 +46,10 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login user with email and password' })
+  @ApiOperation({ summary: 'Login user with email and password (Rate limited to 5 req/min)' })
   @ResponseMessage('Login successful')
   async login(
     @Body() loginDto: LoginDto,
@@ -64,9 +67,10 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 }, auth: { limit: 5, ttl: 60000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh Access & Refresh tokens' })
+  @ApiOperation({ summary: 'Refresh Access & Refresh tokens (Rate limited to 5 req/min)' })
   @ResponseMessage('Tokens refreshed successfully')
   async refresh(
     @Req() req: Request,
