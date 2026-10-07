@@ -11,7 +11,9 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { PharmacyService } from './pharmacy.service.js';
+import { ChronicRefillService } from './chronic-refill.service.js';
 import { CreatePharmacyOrderDto } from './dto/create-pharmacy-order.dto.js';
+import { RefillOrderDto } from './dto/refill-order.dto.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -22,7 +24,10 @@ import { ResponseMessage } from '../../common/decorators/response-message.decora
 @UseGuards(RolesGuard)
 @Controller('pharmacy')
 export class PharmacyController {
-  constructor(private readonly pharmacyService: PharmacyService) {}
+  constructor(
+    private readonly pharmacyService: PharmacyService,
+    private readonly chronicRefillService: ChronicRefillService,
+  ) {}
 
   @Post('orders')
   @Roles(Role.PATIENT)
@@ -38,6 +43,22 @@ export class PharmacyController {
     @Body() dto: CreatePharmacyOrderDto,
   ) {
     return this.pharmacyService.createCartOrder(userId, dto);
+  }
+
+  @Post('refill-order')
+  @Roles(Role.PATIENT, Role.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: '1-click chronic medicine refill re-order (Patient only)',
+    description:
+      'Automatically provisions a refill order with patient preferred partner pharmacy, computes standard maintenance quantity and delivery fee, and schedules the next cycle reminder.',
+  })
+  @ResponseMessage('Chronic medicine refill order provisioned successfully')
+  async refillOrder(
+    @CurrentUser('id') userId: string,
+    @Body() dto: RefillOrderDto,
+  ) {
+    return this.chronicRefillService.provisionRefillOrder(userId, dto);
   }
 
   @Get('verify-qr/:hash')

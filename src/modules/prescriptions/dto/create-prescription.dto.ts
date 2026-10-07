@@ -10,6 +10,7 @@ import {
   Min,
   Max,
   IsDateString,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -75,6 +76,11 @@ export class PrescriptionItemDto {
   @IsNumber()
   @Min(1)
   durationDays!: number;
+
+  @ApiPropertyOptional({ example: true, description: 'Marks medication as chronic maintenance therapy' })
+  @IsOptional()
+  @IsBoolean()
+  isChronic?: boolean;
 }
 
 export class CreatePrescriptionDto {

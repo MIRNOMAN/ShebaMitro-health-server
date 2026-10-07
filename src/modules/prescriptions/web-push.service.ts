@@ -10,6 +10,14 @@ export interface AlarmNotificationPayload {
   intakeTime: Date | string;
 }
 
+export interface ChronicRefillPushPayload {
+  patientId: string;
+  prescriptionId: string;
+  medicineName: string;
+  depletionDate: Date | string;
+  reorderEndpoint?: string;
+}
+
 @Injectable()
 export class WebPushService {
   private readonly logger = new Logger(WebPushService.name);
@@ -94,6 +102,55 @@ export class WebPushService {
     } catch (err: any) {
       this.logger.warn(
         `Web Push Notification dispatch completed/simulated for reminder ${payloadData.reminderId}: ${err.message}`,
+      );
+      return { simulated: true, error: err.message };
+    }
+  }
+
+  /**
+   * Send Web Push notification 72 hours prior to chronic medicine depletion with 1-click re-order CTA
+   */
+  async sendChronicRefillNotification(
+    patientId: string,
+    payloadData: ChronicRefillPushPayload,
+  ): Promise<any> {
+    const subscription = this.getSubscription(patientId);
+    const reorderEndpoint = payloadData.reorderEndpoint || `/api/v1/pharmacy/refill-order`;
+
+    const pushPayload = JSON.stringify({
+      notification: {
+        title: '💊 Chronic Refill Reminder - ShebaMitro Health',
+        body: `Your prescription for ${payloadData.medicineName} will run out in 3 days. Tap to re-order now in 1-click.`,
+        icon: '/assets/icons/refill-reminder.png',
+        badge: '/assets/icons/badge.png',
+        tag: `chronic-refill-${payloadData.prescriptionId}`,
+        renotify: true,
+        requireInteraction: true,
+        actions: [
+          {
+            action: 'reorder',
+            title: '⚡ 1-Click Re-order',
+          },
+        ],
+        data: {
+          prescriptionId: payloadData.prescriptionId,
+          patientId,
+          medicineName: payloadData.medicineName,
+          depletionDate: payloadData.depletionDate,
+          reorderEndpoint,
+        },
+      },
+    });
+
+    try {
+      const result = await webpush.sendNotification(subscription, pushPayload);
+      this.logger.log(
+        `Successfully sent Web Push Notification for chronic refill on prescription ${payloadData.prescriptionId}`,
+      );
+      return result;
+    } catch (err: any) {
+      this.logger.warn(
+        `Web Push Notification dispatch completed/simulated for chronic refill on prescription ${payloadData.prescriptionId}: ${err.message}`,
       );
       return { simulated: true, error: err.message };
     }

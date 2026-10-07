@@ -259,6 +259,10 @@ export class PrescriptionsService {
 
     const updatedPrescription = {
       ...prescription,
+      items: prescription.items.map((item, index) => ({
+        ...item,
+        isChronic: dto.items[index]?.isChronic || item.durationDays >= 30,
+      })),
       qrCodeHash: pdfMeta.sha256Hash,
       pdfUrl: pdfMeta.pdfUrl,
       verifyUrl: pdfMeta.verifyUrl,
