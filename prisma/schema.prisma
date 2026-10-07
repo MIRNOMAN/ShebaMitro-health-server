@@ -154,6 +154,7 @@ model PatientProfile {
   biometricVitals  BiometricVital[]
   vitalAlerts      VitalAlert[]
   emergencyRequests EmergencyRequest[]
+  biomarkerRecords BiomarkerRecord[]
 
   @@map("patient_profiles")
 }
@@ -614,6 +615,28 @@ model FamilyMember {
   @@index([primaryUserId])
   @@map("family_members")
 }
+
+model BiomarkerRecord {
+  id             String         @id @default(uuid())
+  patientId      String         @map("patient_id")
+  patient        PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  testType       String         @map("test_type")
+  markerKey      String         @map("marker_key")
+  markerName     String         @map("marker_name")
+  value          Float
+  unit           String
+  referenceRange String?        @map("reference_range")
+  status         String         @default("NORMAL")
+  scanFileUrl    String?        @map("scan_file_url")
+  recordedAt     DateTime       @default(now()) @map("recorded_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([patientId, markerKey])
+  @@index([patientId, recordedAt])
+  @@map("biomarker_records")
+}
+
 
 
 
