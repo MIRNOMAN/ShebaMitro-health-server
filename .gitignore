@@ -16,8 +16,16 @@ Thumbs.db
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env*
+!.env.example
+
+# Deployment scripts & credentials
+deploy_*.cjs
+fix_nginx.cjs
+ssh_runner.cjs
+test_*.cjs
+
+
 
 # Logs
 logs

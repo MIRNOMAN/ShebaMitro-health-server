@@ -31,22 +31,20 @@ export const envSchema = z.object({
     .default('127.0.0.1'),
   REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
 
-  // AWS S3
+  // AWS S3 & MinIO
   AWS_S3_BUCKET: z
     .string()
-    .min(1, 'AWS_S3_BUCKET environment variable is required.'),
+    .default(process.env.MINIO_BUCKET || 'shebamitro-storage'),
   AWS_S3_REGION: z.string().default('us-east-1'),
   AWS_ACCESS_KEY_ID: z
     .string()
-    .min(1, 'AWS_ACCESS_KEY_ID environment variable is required.'),
+    .default(process.env.MINIO_ACCESS_KEY || 'shebamitro-key'),
   AWS_SECRET_ACCESS_KEY: z
     .string()
-    .min(1, 'AWS_SECRET_ACCESS_KEY environment variable is required.'),
+    .default(process.env.MINIO_SECRET_KEY || 'shebamitro-secret'),
 
   // Custom App Key
-  BASH_APP_KEY: z
-    .string()
-    .min(1, 'BASH_APP_KEY environment variable is required.'),
+  BASH_APP_KEY: z.string().default('bash_app_key_secret_12345'),
 
   // CORS & Throttle
   CORS_ORIGIN: z.string().default('*'),
