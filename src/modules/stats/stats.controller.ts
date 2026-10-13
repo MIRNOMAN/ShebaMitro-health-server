@@ -49,7 +49,19 @@ export class StatsController {
   }
 
   /**
-   * 4. Update / Customize Stats (Admin or Demo Override)
+   * 4. Get Dynamic Bento Grid Ecosystem Data
+   * GET /api/v1/stats/bento
+   */
+  @Public()
+  @Get('bento')
+  @ApiOperation({ summary: 'Get dynamic Bento Grid ecosystem features data' })
+  @ResponseMessage('Bento ecosystem data retrieved successfully')
+  async getBentoData() {
+    return this.statsService.getBentoData();
+  }
+
+  /**
+   * 5. Update / Customize Stats (Admin or Demo Override)
    * PATCH /api/v1/stats
    */
   @Public()

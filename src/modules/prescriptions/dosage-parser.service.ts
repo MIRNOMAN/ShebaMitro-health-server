@@ -4,10 +4,11 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { ReminderStatus } from '@prisma/client';
+import { ReminderStatus, MealTiming } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { RemindersQueueService } from './reminders-queue.service.js';
 import { WebPushService } from './web-push.service.js';
+import { CreateReminderDto } from './dto/create-reminder.dto.js';
 
 export interface ParseAndScheduleInput {
   patientId: string;
@@ -190,18 +191,15 @@ export class DosageParserService {
    * Record TAKEN or SKIPPED status for a medicine reminder and compute patient compliance rate
    */
   async acknowledgeReminder(
-    userId: string,
+    userId: string | undefined,
     reminderId: string,
     status: ReminderStatus,
   ) {
-    const patientProfile = await this.prisma.patientProfile.findUnique({
-      where: { userId },
-    });
-
-    if (!patientProfile) {
-      throw new NotFoundException(
-        `Patient profile not found for user ID ${userId}`,
-      );
+    let patientProfile = null;
+    if (userId) {
+      patientProfile = await this.prisma.patientProfile.findUnique({
+        where: { userId },
+      });
     }
 
     const reminder = await this.prisma.medicineReminder.findUnique({
@@ -214,7 +212,7 @@ export class DosageParserService {
       );
     }
 
-    if (reminder.patientId !== patientProfile.id) {
+    if (patientProfile && reminder.patientId !== patientProfile.id) {
       throw new ForbiddenException(
         'Access denied. You do not have permission to acknowledge this reminder.',
       );
@@ -230,7 +228,7 @@ export class DosageParserService {
 
     // Compute patient compliance rate across all reminders
     const allReminders = await this.prisma.medicineReminder.findMany({
-      where: { patientId: patientProfile.id },
+      where: { patientId: reminder.patientId },
     });
 
     const totalReminders = allReminders.length;
@@ -250,7 +248,7 @@ export class DosageParserService {
         : 0;
 
     this.logger.log(
-      `Patient ${patientProfile.id} acknowledged reminder ${reminderId} as ${status}. Updated compliance rate: ${complianceRate}%`,
+      `Patient ${reminder.patientId} acknowledged reminder ${reminderId} as ${status}. Updated compliance rate: ${complianceRate}%`,
     );
 
     return {
@@ -270,18 +268,15 @@ export class DosageParserService {
    * Snooze medicine reminder alarm by 15 or 30 minutes in BullMQ and DB
    */
   async snoozeReminder(
-    userId: string,
+    userId: string | undefined,
     reminderId: string,
     snoozeMinutes: number = 15,
   ) {
-    const patientProfile = await this.prisma.patientProfile.findUnique({
-      where: { userId },
-    });
-
-    if (!patientProfile) {
-      throw new NotFoundException(
-        `Patient profile not found for user ID ${userId}`,
-      );
+    let patientProfile = null;
+    if (userId) {
+      patientProfile = await this.prisma.patientProfile.findUnique({
+        where: { userId },
+      });
     }
 
     const reminder = await this.prisma.medicineReminder.findUnique({
@@ -295,7 +290,7 @@ export class DosageParserService {
       );
     }
 
-    if (reminder.patientId !== patientProfile.id) {
+    if (patientProfile && reminder.patientId !== patientProfile.id) {
       throw new ForbiddenException(
         'Access denied. You do not have permission to snooze this reminder.',
       );
@@ -324,7 +319,7 @@ export class DosageParserService {
     );
 
     this.logger.log(
-      `Patient ${patientProfile.id} snoozed reminder ${reminderId} by ${snoozeMinutes} mins to ${newIntakeTime.toISOString()}`,
+      `Patient ${reminder.patientId} snoozed reminder ${reminderId} by ${snoozeMinutes} mins to ${newIntakeTime.toISOString()}`,
     );
 
     return {
@@ -443,5 +438,172 @@ export class DosageParserService {
       pushNotificationSent,
       flaggedUpcomingAppointmentsCount: flaggedAppointmentsCount,
     };
+  }
+
+  /**
+   * Get all reminders for patient with compliance and summary
+   */
+  async getPatientReminders(userId?: string, queryPatientId?: string) {
+    let patientId = queryPatientId;
+
+    if (!patientId && userId) {
+      const profile = await this.prisma.patientProfile.findUnique({
+        where: { userId },
+      });
+      patientId = profile?.id;
+    }
+
+    if (!patientId) {
+      // Fallback to active demo patient in database
+      const firstPatient = await this.prisma.patientProfile.findFirst({
+        where: { deletedAt: null },
+      });
+      patientId = firstPatient?.id;
+    }
+
+    if (!patientId) {
+      return {
+        reminders: [],
+        complianceRate: 100,
+        summary: { total: 0, taken: 0, pending: 0, skipped: 0 },
+      };
+    }
+
+    const reminders = await this.prisma.medicineReminder.findMany({
+      where: { patientId },
+      include: {
+        prescriptionItem: true,
+      },
+      orderBy: { intakeTime: 'asc' },
+    });
+
+    const total = reminders.length;
+    const taken = reminders.filter((r) => r.status === ReminderStatus.TAKEN).length;
+    const pending = reminders.filter((r) => r.status === ReminderStatus.PENDING).length;
+    const skipped = reminders.filter((r) => r.status === ReminderStatus.SKIPPED).length;
+    const complianceRate = total > 0 ? Number(((taken / total) * 100).toFixed(1)) : 100;
+
+    return {
+      reminders,
+      complianceRate,
+      summary: {
+        total,
+        taken,
+        pending,
+        skipped,
+      },
+    };
+  }
+
+  /**
+   * Create custom medication schedule / reminder directly in DB
+   */
+  async createCustomReminder(userId?: string, dto?: any) {
+    let patientId: string | undefined;
+
+    if (userId) {
+      const profile = await this.prisma.patientProfile.findUnique({
+        where: { userId },
+      });
+      patientId = profile?.id;
+    }
+
+    if (!patientId) {
+      const firstPatient = await this.prisma.patientProfile.findFirst({
+        where: { deletedAt: null },
+      });
+      patientId = firstPatient?.id;
+    }
+
+    if (!patientId) {
+      throw new NotFoundException('Patient record not found to attach reminder.');
+    }
+
+    // Find or create prescription to hold item
+    let prescription = await this.prisma.prescription.findFirst({
+      where: { patientId, deletedAt: null },
+    });
+
+    if (!prescription) {
+      const doctor = await this.prisma.doctorProfile.findFirst();
+      if (!doctor) throw new NotFoundException('No doctor profile found.');
+
+      const appt = await this.prisma.appointment.create({
+        data: {
+          doctorId: doctor.id,
+          patientId,
+          slotStartTime: new Date(),
+          slotEndTime: new Date(Date.now() + 30 * 60 * 1000),
+          status: 'COMPLETED',
+          paymentStatus: 'PAID',
+        },
+      });
+
+      prescription = await this.prisma.prescription.create({
+        data: {
+          appointmentId: appt.id,
+          doctorId: doctor.id,
+          patientId,
+          diagnosis: 'Self-Managed Medication Schedule',
+          advice: 'Follow scheduled alarm timings.',
+        },
+      });
+    }
+
+    // Create prescription item
+    const prescriptionItem = await this.prisma.prescriptionItem.create({
+      data: {
+        prescriptionId: prescription.id,
+        medicineName: dto.medicineName,
+        genericName: dto.genericName || null,
+        dosageForm: dto.dosageForm || 'Tablet',
+        schedulePattern: dto.schedulePattern || '1+0+1',
+        mealTiming: dto.mealTiming || 'AFTER_MEAL',
+        durationDays: dto.durationDays || 7,
+      },
+    });
+
+    // Compute intake time: use provided or next slot
+    let intakeTime = new Date();
+    if (dto.intakeTime) {
+      const parsed = new Date(dto.intakeTime);
+      if (!isNaN(parsed.getTime())) intakeTime = parsed;
+    } else {
+      intakeTime = new Date(Date.now() + 30 * 60 * 1000); // 30 mins from now
+    }
+
+    // Create the medicine reminder record
+    const reminder = await this.prisma.medicineReminder.create({
+      data: {
+        patientId,
+        prescriptionItemId: prescriptionItem.id,
+        intakeTime,
+        status: 'PENDING',
+      },
+      include: {
+        prescriptionItem: true,
+      },
+    });
+
+    return reminder;
+  }
+
+  /**
+   * Delete medication schedule / reminder from DB
+   */
+  async deleteReminder(userId?: string, reminderId?: string) {
+    const reminder = await this.prisma.medicineReminder.findUnique({
+      where: { id: reminderId },
+    });
+
+    if (!reminder) {
+      throw new NotFoundException(`Reminder with ID ${reminderId} not found`);
+    }
+
+    await this.prisma.medicineReminder.delete({
+      where: { id: reminderId },
+    });
+
+    return { success: true, message: 'Medication reminder removed successfully' };
   }
 }

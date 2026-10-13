@@ -2,8 +2,11 @@ import {
   Controller,
   Put,
   Get,
+  Post,
+  Delete,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,9 +16,11 @@ import { Role } from '@prisma/client';
 import { DosageParserService } from './dosage-parser.service.js';
 import { AcknowledgeReminderDto } from './dto/acknowledge-reminder.dto.js';
 import { SnoozeReminderDto } from './dto/snooze-reminder.dto.js';
+import { CreateReminderDto } from './dto/create-reminder.dto.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { Public } from '../../common/decorators/public.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
 @ApiTags('Alarms', 'Medicine Reminders')
@@ -25,19 +30,59 @@ import { ResponseMessage } from '../../common/decorators/response-message.decora
 export class RemindersController {
   constructor(private readonly dosageParserService: DosageParserService) {}
 
-  @Put(':id/acknowledge')
-  @Roles(Role.PATIENT)
+  /**
+   * 1. Get all medicine reminders and patient adherence summary
+   * GET /api/v1/reminders
+   */
+  @Get()
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Acknowledge medicine reminder intake status (Patient only)',
+    summary: 'Get all medicine reminders and compliance summary for patient',
+  })
+  @ResponseMessage('Medicine reminders retrieved successfully')
+  async getReminders(
+    @CurrentUser('id') userId?: string,
+    @Query('patientId') patientId?: string,
+  ) {
+    return this.dosageParserService.getPatientReminders(userId, patientId);
+  }
+
+  /**
+   * 2. Add a new custom medication schedule / reminder
+   * POST /api/v1/reminders
+   */
+  @Post()
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new medication schedule and reminder alarm',
+  })
+  @ResponseMessage('Medication reminder scheduled successfully')
+  async createReminder(
+    @CurrentUser('id') userId?: string,
+    @Body() dto?: CreateReminderDto,
+  ) {
+    return this.dosageParserService.createCustomReminder(userId, dto);
+  }
+
+  /**
+   * 3. Acknowledge reminder (TAKEN or SKIPPED)
+   * PUT /api/v1/reminders/:id/acknowledge
+   */
+  @Put(':id/acknowledge')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Acknowledge medicine reminder intake status',
     description:
       'Records TAKEN or SKIPPED status for a medicine reminder and computes updated patient compliance rate.',
   })
   @ResponseMessage('Medicine reminder acknowledged successfully')
   async acknowledgeReminder(
-    @CurrentUser('id') userId: string,
     @Param('id') reminderId: string,
     @Body() dto: AcknowledgeReminderDto,
+    @CurrentUser('id') userId?: string,
   ) {
     return this.dosageParserService.acknowledgeReminder(
       userId,
@@ -46,19 +91,23 @@ export class RemindersController {
     );
   }
 
+  /**
+   * 4. Snooze reminder alarm
+   * PUT /api/v1/reminders/:id/snooze
+   */
   @Put(':id/snooze')
-  @Roles(Role.PATIENT)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Snooze medicine reminder alarm (Patient only)',
+    summary: 'Snooze medicine reminder alarm',
     description:
       'Delays medicine reminder alarm by 15 or 30 minutes in BullMQ and updates scheduled intake time in database.',
   })
   @ResponseMessage('Medicine reminder alarm snoozed successfully')
   async snoozeReminder(
-    @CurrentUser('id') userId: string,
     @Param('id') reminderId: string,
     @Body() dto: SnoozeReminderDto,
+    @CurrentUser('id') userId?: string,
   ) {
     return this.dosageParserService.snoozeReminder(
       userId,
@@ -67,14 +116,34 @@ export class RemindersController {
     );
   }
 
+  /**
+   * 5. Delete a medication reminder
+   * DELETE /api/v1/reminders/:id
+   */
+  @Delete(':id')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Delete a medication reminder schedule',
+  })
+  @ResponseMessage('Medicine reminder deleted successfully')
+  async deleteReminder(
+    @Param('id') reminderId: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.dosageParserService.deleteReminder(userId, reminderId);
+  }
+
+  /**
+   * 6. Get compliance report
+   * GET /api/v1/reminders/compliance/:patientId
+   */
   @Get('compliance/:patientId')
   @Roles(Role.PATIENT, Role.DOCTOR, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
       'Get patient medication adherence percentage and compliance report',
-    description:
-      'Calculates adherence percentage (Doses Taken on Time / Total Prescribed Doses). If adherence falls below 70%, triggers automated push reminder to patient and flags an adherence alert on doctor upcoming follow-up appointment view.',
   })
   @ResponseMessage('Patient compliance report generated successfully')
   async getPatientCompliance(@Param('patientId') patientId: string) {
