@@ -18,6 +18,8 @@ import { AppointmentsQueueService } from './appointments-queue.service.js';
 import { AppointmentsGateway } from './appointments.gateway.js';
 import { CreateAppointmentDto } from './dto/create-appointment.dto.js';
 
+import { NotificationsService } from '../notifications/notifications.service.js';
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -28,6 +30,7 @@ export class AppointmentsService {
     @Inject(forwardRef(() => AppointmentsQueueService))
     private readonly queueService: AppointmentsQueueService,
     private readonly gateway: AppointmentsGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -193,10 +196,36 @@ export class AppointmentsService {
       `Appointment ${createdAppointment.id} created with PENDING status and 10-minute grace period`,
     );
 
+    // 5. Send automated confirmation SMS & Email notification to client
+    let notifications: any = null;
+    try {
+      notifications =
+        await this.notificationsService.sendAppointmentConfirmationNotification({
+          appointmentId: createdAppointment.id,
+          patientName:
+            createdAppointment.patient?.user?.name || 'Valued Patient',
+          patientEmail: createdAppointment.patient?.user?.email,
+          patientPhone: createdAppointment.patient?.user?.phone,
+          doctorName: createdAppointment.doctor?.name || 'Doctor',
+          doctorSpecialization:
+            createdAppointment.doctor?.specialization || 'Specialist',
+          slotStartTime: createdAppointment.slotStartTime,
+          slotEndTime: createdAppointment.slotEndTime,
+          chamberName: createdAppointment.notes || 'ShebaMitro Virtual Chamber',
+          consultFee: createdAppointment.doctor?.consultFee || 1200,
+          type: createdAppointment.type,
+        });
+    } catch (notifErr: any) {
+      this.logger.warn(
+        `Failed to dispatch appointment notifications: ${notifErr.message}`,
+      );
+    }
+
     return {
       ...createdAppointment,
       paymentGracePeriodMinutes: 10,
       paymentExpiresAt: new Date(Date.now() + gracePeriodMs).toISOString(),
+      notifications,
     };
   }
 

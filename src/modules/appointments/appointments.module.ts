@@ -7,8 +7,10 @@ import { AppointmentsGateway } from './appointments.gateway.js';
 import { AppointmentsService } from './appointments.service.js';
 import { AppointmentsController } from './appointments.controller.js';
 
+import { NotificationsModule } from '../notifications/notifications.module.js';
+
 @Module({
-  imports: [DatabaseModule, RedisModule],
+  imports: [DatabaseModule, RedisModule, NotificationsModule],
   controllers: [AppointmentsController],
   providers: [
     RedlockService,

@@ -17,6 +17,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { OtpModule } from './modules/otp/otp.module.js';
 import { DoctorModule } from './modules/doctors/doctors.module.js';
 import { AppointmentsModule } from './modules/appointments/appointments.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bullmq';
@@ -95,6 +96,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     OtpModule,
     DoctorModule,
     AppointmentsModule,
+    NotificationsModule,
     ChatModule,
     TeleconsultModule,
     PrescriptionModule,
