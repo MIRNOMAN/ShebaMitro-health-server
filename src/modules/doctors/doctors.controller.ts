@@ -11,6 +11,18 @@ export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
   @Public()
+  @Get('specialties')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Get all medical specialties with dynamic doctor counts per category',
+  })
+  @ResponseMessage('Doctor specialties fetched successfully')
+  async getSpecialties() {
+    return this.doctorsService.getSpecialtiesWithStats();
+  }
+
+  @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
