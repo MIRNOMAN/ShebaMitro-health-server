@@ -1,4 +1,4 @@
-import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service.js';
 import { SearchDoctorsQueryDto } from './dto/search-doctors-query.dto.js';
@@ -32,5 +32,14 @@ export class DoctorsController {
   @ResponseMessage('Doctors fetched successfully')
   async searchDoctors(@Query() queryDto: SearchDoctorsQueryDto) {
     return this.doctorsService.searchDoctors(queryDto);
+  }
+
+  @Public()
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get doctor details by ID with dynamic slots' })
+  @ResponseMessage('Doctor details fetched successfully')
+  async getDoctorById(@Param('id') id: string) {
+    return this.doctorsService.getDoctorById(id);
   }
 }

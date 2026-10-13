@@ -71,23 +71,28 @@ export class AppointmentsQueueService implements OnModuleInit, OnModuleDestroy {
 
     if (this.queue) {
       try {
-        await this.queue.add(
-          'expire-appointment',
-          { appointmentId },
-          {
-            jobId: `expire-${appointmentId}`,
-            delay: delayMs,
-            removeOnComplete: true,
-            removeOnFail: true,
-          },
-        );
+        await Promise.race([
+          this.queue.add(
+            'expire-appointment',
+            { appointmentId },
+            {
+              jobId: `expire-${appointmentId}`,
+              delay: delayMs,
+              removeOnComplete: true,
+              removeOnFail: true,
+            },
+          ),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('BullMQ connection timeout')), 1000),
+          ),
+        ]);
         queuedInBullMQ = true;
         this.logger.log(
           `Recorded appointment expiration job in BullMQ for appointment ID: ${appointmentId} (delay: ${delayMs}ms)`,
         );
       } catch (err: any) {
         this.logger.warn(
-          `Could not add job to BullMQ queue: ${err.message}. Using fallback timer.`,
+          `Could not add job to BullMQ queue (${err.message}). Using in-memory fallback timer.`,
         );
       }
     }
@@ -116,7 +121,12 @@ export class AppointmentsQueueService implements OnModuleInit, OnModuleDestroy {
     if (this.queue) {
       try {
         const jobId = `expire-${appointmentId}`;
-        const job = await this.queue.getJob(jobId);
+        const job = await Promise.race([
+          this.queue.getJob(jobId),
+          new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('BullMQ connection timeout')), 1000),
+          ),
+        ]);
         if (job) {
           await job.remove();
           this.logger.log(

@@ -37,21 +37,33 @@ export class SearchDoctorsQueryDto {
 
   @ApiPropertyOptional({ description: 'Minimum consultation fee' })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ''
+      ? parseFloat(value)
+      : undefined,
+  )
   @IsNumber()
   @Min(0)
   minFee?: number;
 
   @ApiPropertyOptional({ description: 'Maximum consultation fee' })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ''
+      ? parseFloat(value)
+      : undefined,
+  )
   @IsNumber()
   @Min(0)
   maxFee?: number;
 
   @ApiPropertyOptional({ description: 'Minimum rating threshold (e.g. 4.5)' })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ''
+      ? parseFloat(value)
+      : undefined,
+  )
   @IsNumber()
   @Min(0)
   @Max(5)
@@ -76,14 +88,22 @@ export class SearchDoctorsQueryDto {
 
   @ApiPropertyOptional({ default: 1, description: 'Page number' })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ''
+      ? parseInt(value, 10)
+      : 1,
+  )
   @IsNumber()
   @Min(1)
   page: number = 1;
 
   @ApiPropertyOptional({ default: 10, description: 'Items per page' })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null && value !== ''
+      ? parseInt(value, 10)
+      : 10,
+  )
   @IsNumber()
   @Min(1)
   @Max(100)
