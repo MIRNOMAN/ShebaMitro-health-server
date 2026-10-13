@@ -34,6 +34,7 @@ import { VitalsSyncModule } from './modules/vitals-sync/vitals-sync.module.js';
 import { EmergencyModule } from './modules/emergency/emergency.module.js';
 import { FamilyMemberModule } from './modules/family-member/family-member.module.js';
 import { ReportOcrModule } from './modules/report-ocr/report-ocr.module.js';
+import { UploadModule } from './modules/upload/upload.module.js';
 import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -107,6 +108,7 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     EmergencyModule,
     FamilyMemberModule,
     ReportOcrModule,
+    UploadModule,
   ],
   providers: [
     // Global ValidationPipe: strict DTO filtering and implicit type transformation

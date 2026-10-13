@@ -9,8 +9,18 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
 import { UsersService } from './users.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
@@ -47,11 +57,66 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get current authenticated user profile' })
   @ResponseMessage('Current user profile retrieved successfully')
-  getMe(@CurrentUser() user: any, @CurrentUser('id') userId: string) {
+  async getMe(@CurrentUser('id') userId: string, @CurrentUser() user: any) {
+    const profile = userId ? await this.usersService.findOne(userId) : user;
     return {
       userId,
-      profile: user,
+      profile,
     };
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update current authenticated user profile' })
+  @ResponseMessage('User profile updated successfully')
+  async updateMe(
+    @CurrentUser('id') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const updated = await this.usersService.update(userId, updateUserDto);
+    return {
+      userId,
+      profile: updated,
+    };
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update current authenticated user profile' })
+  @ResponseMessage('User profile updated successfully')
+  async updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const updated = await this.usersService.update(userId, updateUserDto);
+    return {
+      userId,
+      profile: updated,
+    };
+  }
+
+  @Post('upload-avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload avatar image' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ResponseMessage('Avatar uploaded successfully')
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser('id') userId: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No image file uploaded');
+    }
+    return this.usersService.saveAvatar(userId, file);
   }
 
   @Get(':id')

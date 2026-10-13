@@ -16,6 +16,16 @@ export class CreateUserDto {
   @IsNotEmpty()
   email!: string;
 
+  @ApiPropertyOptional({ example: 'Dr. John Doe' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+
   @ApiPropertyOptional({ example: '+8801700000000' })
   @IsString()
   @IsOptional()

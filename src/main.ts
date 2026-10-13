@@ -5,6 +5,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import express from 'express';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor.js';
@@ -61,6 +63,7 @@ async function bootstrap() {
   );
   app.use(compression());
   app.use(cookieParser());
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // ── Strict CORS Configuration ───────────────────────────────
   const allowedOrigins =
