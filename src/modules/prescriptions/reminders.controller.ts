@@ -33,9 +33,10 @@ export class RemindersController {
   /**
    * 1. Get all medicine reminders and patient adherence summary
    * GET /api/v1/reminders
+   * Restricted: Patient role only
    */
   @Get()
-  @Public()
+  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all medicine reminders and compliance summary for patient',
@@ -51,9 +52,10 @@ export class RemindersController {
   /**
    * 2. Add a new custom medication schedule / reminder
    * POST /api/v1/reminders
+   * Restricted: Patient role only
    */
   @Post()
-  @Public()
+  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new medication schedule and reminder alarm',
@@ -69,9 +71,10 @@ export class RemindersController {
   /**
    * 3. Acknowledge reminder (TAKEN or SKIPPED)
    * PUT /api/v1/reminders/:id/acknowledge
+   * Restricted: Patient role only
    */
   @Put(':id/acknowledge')
-  @Public()
+  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Acknowledge medicine reminder intake status',
@@ -94,9 +97,10 @@ export class RemindersController {
   /**
    * 4. Snooze reminder alarm
    * PUT /api/v1/reminders/:id/snooze
+   * Restricted: Patient role only
    */
   @Put(':id/snooze')
-  @Public()
+  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Snooze medicine reminder alarm',
@@ -119,9 +123,10 @@ export class RemindersController {
   /**
    * 5. Delete a medication reminder
    * DELETE /api/v1/reminders/:id
+   * Restricted: Patient role only
    */
   @Delete(':id')
-  @Public()
+  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete a medication reminder schedule',
