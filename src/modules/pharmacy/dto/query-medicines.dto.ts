@@ -17,6 +17,14 @@ export class QueryMedicinesDto {
   @IsString()
   category?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Comma-separated list of medicine or generic names to filter by (e.g. from scanned prescription)',
+  })
+  @IsOptional()
+  @IsString()
+  names?: string;
+
   @ApiPropertyOptional({ description: 'Page number', default: '1' })
   @IsOptional()
   @IsNumberString()

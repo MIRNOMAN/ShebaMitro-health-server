@@ -55,6 +55,19 @@ export class PharmacyService {
       where.category = query.category;
     }
 
+    if (query.names && query.names.trim().length > 0) {
+      const namesList = query.names
+        .split(',')
+        .map((n) => n.trim())
+        .filter((n) => n.length > 0);
+      if (namesList.length > 0) {
+        where.OR = namesList.flatMap((term) => [
+          { name: { contains: term, mode: 'insensitive' } },
+          { genericName: { contains: term, mode: 'insensitive' } },
+        ]);
+      }
+    }
+
     if (query.search && query.search.trim().length > 0) {
       const term = query.search.trim();
       where.OR = [
@@ -122,14 +135,29 @@ export class PharmacyService {
         count: categoryMap['cardiac'] || 0,
       },
       {
+        id: 'antibiotic',
+        name: 'Antibiotics',
+        count: categoryMap['antibiotic'] || 0,
+      },
+      {
+        id: 'respiratory',
+        name: 'Respiratory & Allergy',
+        count: categoryMap['respiratory'] || 0,
+      },
+      {
         id: 'vitamins',
         name: 'Vitamins & Supplements',
         count: categoryMap['vitamins'] || 0,
       },
       {
-        id: 'antibiotic',
-        name: 'Antibiotics',
-        count: categoryMap['antibiotic'] || 0,
+        id: 'skin',
+        name: 'Skin & Dermatology',
+        count: categoryMap['skin'] || 0,
+      },
+      {
+        id: 'eye_ear',
+        name: 'Eye & Ear Care',
+        count: categoryMap['eye_ear'] || 0,
       },
     ];
   }

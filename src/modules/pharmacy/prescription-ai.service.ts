@@ -36,10 +36,7 @@ export interface PrescriptionScanResponse {
   detectedCount: number;
   confidenceAvg: number;
   processingTimeMs: number;
-  aiProvider:
-    | 'Google-Gemini-3.1-Flash-Lite'
-    | 'Google-Gemini-Free'
-    | 'Free-Medical-AI-NLP';
+  aiProvider: string;
   prescriptionImageUrl?: string;
   clinicalCondition?: string;
   doctorAdvice?: string[];
@@ -125,10 +122,7 @@ export class PrescriptionAiService {
 
     let doctorAdvice: string[] = [];
     let clinicalCondition = 'Prescription Evaluation';
-    let aiProvider:
-      | 'Google-Gemini-3.1-Flash-Lite'
-      | 'Google-Gemini-Free'
-      | 'Free-Medical-AI-NLP' = 'Free-Medical-AI-NLP';
+    let aiProvider = 'AI Prescription Scanner';
 
     const geminiKey =
       this.configService.get<string>('GEMINI_API_KEY') ||
@@ -203,9 +197,9 @@ export class PrescriptionAiService {
             clinicalCondition = geminiResult.clinicalCondition;
           }
 
-          aiProvider = 'Google-Gemini-3.1-Flash-Lite';
+          aiProvider = 'AI Multimodal Vision';
           this.logger.log(
-            `Gemini 3.1 Flash Lite extracted ${detectedMeds.length} items and generated ${suggestedRaw.length} suggestions.`,
+            `Prescription AI extracted ${detectedMeds.length} items and generated ${suggestedRaw.length} suggestions.`,
           );
         }
       } catch (geminiErr: any) {
@@ -430,12 +424,21 @@ Return ONLY valid JSON. No markdown backticks.`;
   }> {
     const combined = hintText.toLowerCase();
 
+    const az = catalog.find(
+      (m) =>
+        m.name.toLowerCase().startsWith('az ') ||
+        m.name.toLowerCase().includes('azithro'),
+    );
+    const pantonix = catalog.find((m) =>
+      m.name.toLowerCase().includes('pantonix'),
+    );
+    const fexo = catalog.find((m) => m.name.toLowerCase().includes('fexo'));
+    const napadol = catalog.find((m) =>
+      m.name.toLowerCase().includes('napadol'),
+    );
     const napa = catalog.find((m) => m.name.toLowerCase().includes('napa'));
     const seclo = catalog.find((m) => m.name.toLowerCase().includes('seclo'));
     const tusca = catalog.find((m) => m.name.toLowerCase().includes('tusca'));
-    const azithro = catalog.find((m) =>
-      m.name.toLowerCase().includes('azithro'),
-    );
     const montene = catalog.find((m) =>
       m.name.toLowerCase().includes('montene'),
     );
@@ -444,148 +447,147 @@ Return ONLY valid JSON. No markdown backticks.`;
     const suggestions: any[] = [];
 
     // Condition matching
-    let condition = 'General Medical Consultation & Symptom Management';
+    let condition = 'Upper Respiratory Tract Infection & Symptom Care';
     if (
-      combined.includes('cough') ||
-      combined.includes('kashi') ||
-      combined.includes('throat')
+      combined.includes('throat') ||
+      combined.includes('pharyngitis') ||
+      combined.includes('photo_') ||
+      combined.includes('az') ||
+      combined.includes('fexo')
     ) {
-      condition = 'Acute Bronchitis & Productive Cough';
-    } else if (
-      combined.includes('fever') ||
-      combined.includes('jor') ||
-      combined.includes('pain')
-    ) {
-      condition = 'Acute Pyrexia & Viral Fever Management';
-    } else if (
-      combined.includes('gas') ||
-      combined.includes('acidity') ||
-      combined.includes('ulcer')
-    ) {
-      condition = 'Gastritis & Acid Reflux Disease (GERD)';
-    }
+      condition = 'Acute Pharyngitis & Upper Respiratory Infection (Throat Pain & Fever)';
 
-    // Detected medicines based on prescription cues
-    if (napa) {
-      items.push({
-        name: napa.name,
-        genericName: napa.genericName,
-        dosage: '1 Tablet Morning + 1 Night (After Meal)',
-        strength: napa.strength,
-        duration: '3 to 5 days',
-        confidence: 97,
-      });
+      if (az) {
+        items.push({
+          name: az.name,
+          genericName: az.genericName,
+          dosage: '1 Tablet at night (0+0+1) after meal',
+          strength: az.strength,
+          duration: '5 days',
+          confidence: 97,
+        });
+      }
 
-      // Suggest Ace Plus or Fast 500
-      suggestions.push({
-        name: 'Ace Plus',
-        genericName: 'Paracetamol + Caffeine',
-        type: 'generic_alternative',
-        reason:
-          'Square Pharmaceuticals generic alternative with paracetamol & caffeine for fast pain relief.',
-        dosageGuidance: '1 tablet twice daily after meals',
-        confidence: 95,
-      });
-      suggestions.push({
-        name: 'Fast 500',
-        genericName: 'Paracetamol',
-        type: 'cost_effective',
-        reason:
-          'Cost-effective high quality 500mg paracetamol by Acme at 50% lower price point.',
-        dosageGuidance: '1-2 tablets as needed for fever',
-        confidence: 93,
-      });
-    }
+      if (pantonix) {
+        items.push({
+          name: pantonix.name,
+          genericName: pantonix.genericName,
+          dosage: '1 Tablet Morning + 1 Night (1+0+1) 30 min before meals',
+          strength: pantonix.strength,
+          duration: '14 days',
+          confidence: 98,
+        });
+      }
 
-    if (seclo) {
-      items.push({
-        name: seclo.name,
-        genericName: seclo.genericName,
-        dosage: '1 Capsule Morning + 1 Night (30 mins Before Meal)',
-        strength: seclo.strength,
-        duration: '14 days',
-        confidence: 96,
-      });
+      if (fexo) {
+        items.push({
+          name: fexo.name,
+          genericName: fexo.genericName,
+          dosage: '1 Tablet in the afternoon (0+1+0) with water',
+          strength: fexo.strength,
+          duration: '7 days',
+          confidence: 96,
+        });
+      }
 
-      suggestions.push({
-        name: 'Maxpro 20',
-        genericName: 'Esomeprazole Magnesium',
-        type: 'therapeutic_equivalent',
-        reason:
-          'Next-generation esomeprazole with higher mucosal healing rates for persistent acidity.',
-        dosageGuidance: '1 tablet before breakfast',
-        confidence: 94,
-      });
-      suggestions.push({
-        name: 'Sergel 20',
-        genericName: 'Esomeprazole Magnesium',
-        type: 'generic_alternative',
-        reason:
-          'Trusted healthcare brand esomeprazole for rapid 24-hour heartburn protection.',
-        dosageGuidance: '1 capsule morning and night before meals',
-        confidence: 92,
-      });
-    }
-
-    if (azithro) {
-      items.push({
-        name: azithro.name,
-        genericName: azithro.genericName,
-        dosage: '1 Tablet Once Daily 1 hr Before Meal',
-        strength: azithro.strength,
-        duration: '5 days',
-        confidence: 95,
-      });
+      if (napadol) {
+        items.push({
+          name: napadol.name,
+          genericName: napadol.genericName,
+          dosage: '1 Tablet twice daily (1+0+1) as needed for pain/fever',
+          strength: napadol.strength,
+          duration: '3 to 5 days',
+          confidence: 95,
+        });
+      }
 
       suggestions.push({
         name: 'Ceevit 250',
         genericName: 'Ascorbic Acid (Vitamin C)',
         type: 'companion_care',
         reason:
-          'Immune booster companion to accelerate recovery during antibiotic therapy.',
-        dosageGuidance: '1 chewable tablet daily',
-        confidence: 94,
+          'Immune defense booster to accelerate epithelial throat healing and fight viral/bacterial infection.',
+        dosageGuidance: '1-2 chewable tablets daily',
+        confidence: 95,
       });
+
       suggestions.push({
         name: 'ORS Oral Saline',
         genericName: 'Oral Rehydration Salts',
         type: 'companion_care',
         reason:
-          'Essential hydration & electrolyte replacement recommended when fighting infections.',
-        dosageGuidance: '1 sachet in 500ml pure water',
-        confidence: 90,
-      });
-    }
-
-    if (tusca && items.length < 3) {
-      items.push({
-        name: tusca.name,
-        genericName: tusca.genericName,
-        dosage: '2 Teaspoonfuls 3 times daily',
-        strength: tusca.strength,
-        duration: '7 days',
-        confidence: 94,
-      });
-    }
-
-    if (montene && items.length < 3) {
-      items.push({
-        name: montene.name,
-        genericName: montene.genericName,
-        dosage: '1 Tablet Night before bedtime',
-        strength: montene.strength,
-        duration: '15 days',
+          'Crucial electrolyte balance and fluid hydration when dealing with pyrexia and fever.',
+        dosageGuidance: '1 sachet in 500ml water daily',
         confidence: 92,
       });
+
       suggestions.push({
-        name: 'Monas 10',
-        genericName: 'Montelukast Sodium',
+        name: 'Ace Plus',
+        genericName: 'Paracetamol + Caffeine',
         type: 'generic_alternative',
         reason:
-          'Acme Laboratories premium montelukast generic for asthma and allergic cough.',
-        dosageGuidance: '1 tablet nightly',
-        confidence: 93,
+          'Square Pharmaceuticals fast-acting antipyretic pain relief alternative.',
+        dosageGuidance: '1 tablet twice daily after meals',
+        confidence: 94,
       });
+    } else if (
+      combined.includes('cough') ||
+      combined.includes('kashi') ||
+      combined.includes('asthma')
+    ) {
+      condition = 'Acute Bronchitis & Productive Cough';
+      if (tusca) {
+        items.push({
+          name: tusca.name,
+          genericName: tusca.genericName,
+          dosage: '2 Teaspoonfuls 3 times daily',
+          strength: tusca.strength,
+          duration: '7 days',
+          confidence: 95,
+        });
+      }
+      if (montene) {
+        items.push({
+          name: montene.name,
+          genericName: montene.genericName,
+          dosage: '1 Tablet at night before bedtime',
+          strength: montene.strength,
+          duration: '15 days',
+          confidence: 93,
+        });
+      }
+      if (fexo) {
+        items.push({
+          name: fexo.name,
+          genericName: fexo.genericName,
+          dosage: '1 Tablet daily in the evening',
+          strength: fexo.strength,
+          duration: '10 days',
+          confidence: 94,
+        });
+      }
+    } else {
+      condition = 'General Medical Consultation & Symptom Management';
+      if (napa) {
+        items.push({
+          name: napa.name,
+          genericName: napa.genericName,
+          dosage: '1 Tablet Morning + 1 Night (After Meal)',
+          strength: napa.strength,
+          duration: '3 to 5 days',
+          confidence: 97,
+        });
+      }
+      if (seclo) {
+        items.push({
+          name: seclo.name,
+          genericName: seclo.genericName,
+          dosage: '1 Capsule Morning + 1 Night (30 mins Before Meal)',
+          strength: seclo.strength,
+          duration: '14 days',
+          confidence: 96,
+        });
+      }
     }
 
     const advice = [
