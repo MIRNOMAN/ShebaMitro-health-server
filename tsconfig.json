@@ -28,5 +28,7 @@
       "@/database/*": ["src/database/*"],
       "@/modules/*": ["src/modules/*"]
     }
-  }
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist", "uploads", "deploy_pkg", "*.cjs", "*.mjs"]
 }

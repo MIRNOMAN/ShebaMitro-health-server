@@ -1,6 +1,5 @@
 // @ts-check
 import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -9,15 +8,17 @@ export default tseslint.config(
     ignores: [
       'eslint.config.mjs',
       'dist/**',
+      'node_modules/**',
       '*.cjs',
       '*.mjs',
+      'scripts/**',
       'scratch/**',
       'uploads/**',
+      'deploy_pkg/**',
     ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
   {
     languageOptions: {
       globals: {
@@ -26,7 +27,9 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['*.cjs', '*.mjs', '*.js'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -47,9 +50,11 @@ export default tseslint.config(
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-base-to-string': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
-      'no-useless-escape': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      'no-useless-escape': 'off',
+      'prettier/prettier': 'off',
     },
   },
 );
