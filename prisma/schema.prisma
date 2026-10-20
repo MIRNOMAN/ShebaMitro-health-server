@@ -212,18 +212,26 @@ model LabProfile {
 }
 
 model LabTest {
-  id               String     @id @default(uuid())
-  labId            String     @map("lab_id")
-  lab              LabProfile @relation(fields: [labId], references: [id], onDelete: Cascade)
-  testName         String     @map("test_name")
-  category         String
-  description      String?
-  price            Float
-  fastingRequired  Boolean    @default(false) @map("fasting_required")
-  turnaroundHours  Int        @default(24) @map("turnaround_hours")
-  labAccreditation String?    @map("lab_accreditation")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
+  id                     String     @id @default(uuid())
+  labId                  String     @map("lab_id")
+  lab                    LabProfile @relation(fields: [labId], references: [id], onDelete: Cascade)
+  testName               String     @map("test_name")
+  category               String
+  description            String?
+  sampleType             String?    @default("Blood") @map("sample_type")
+  parameters             String[]   @default([])
+  parametersCount        Int        @default(1) @map("parameters_count")
+  price                  Float
+  originalPrice          Float?     @map("original_price")
+  discountPercentage     Int?       @map("discount_percentage")
+  fastingRequired        Boolean    @default(false) @map("fasting_required")
+  turnaroundHours        Int        @default(24) @map("turnaround_hours")
+  labAccreditation       String?    @map("lab_accreditation")
+  homeCollectionEligible Boolean    @default(true) @map("home_collection_eligible")
+  isPopular              Boolean    @default(false) @map("is_popular")
+  imageUrl               String?    @map("image_url")
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
 
   @@index([testName])
   @@index([category])

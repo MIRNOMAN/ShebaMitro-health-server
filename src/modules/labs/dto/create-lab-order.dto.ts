@@ -9,10 +9,20 @@ import {
 } from 'class-validator';
 
 export class CreateLabOrderDto {
-  @ApiProperty({ description: 'ID of the selected Diagnostic Lab Profile' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ description: 'ID of the selected Diagnostic Lab Profile' })
+  @IsOptional()
   @IsUUID()
-  labId!: string;
+  labId?: string;
+
+  @ApiPropertyOptional({ description: 'Patient contact full name' })
+  @IsOptional()
+  @IsString()
+  patientName?: string;
+
+  @ApiPropertyOptional({ description: 'Patient phone number for phlebotomist contact' })
+  @IsOptional()
+  @IsString()
+  patientPhone?: string;
 
   @ApiPropertyOptional({
     description: 'Optional Prescription ID linking this lab order',

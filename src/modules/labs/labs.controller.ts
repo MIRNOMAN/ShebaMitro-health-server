@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Param,
   Query,
   Body,
@@ -20,7 +21,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role, LabOrderStatus } from '@prisma/client';
 import { LabsService } from './labs.service.js';
 import { FilterLabTestsDto } from './dto/filter-lab-tests.dto.js';
 import { CreateLabOrderDto } from './dto/create-lab-order.dto.js';
@@ -51,20 +52,90 @@ export class LabsController {
     return this.labsService.searchLabTests(dto);
   }
 
+  @Public()
+  @Get('categories')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get diagnostic package categories with counts',
+  })
+  @ResponseMessage('Lab categories retrieved successfully')
+  async getCategories() {
+    return this.labsService.getLabCategories();
+  }
+
+  @Public()
+  @Get('tests/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get single lab test details',
+  })
+  @ResponseMessage('Lab test details retrieved successfully')
+  async getTestById(@Param('id') id: string) {
+    return this.labsService.getLabTestById(id);
+  }
+
+  @Public()
   @Post('orders')
-  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Book home sample collection for lab tests',
     description:
-      'Allows patients to book home phlebotomist sample collection for selected diagnostic lab tests.',
+      'Allows patients or guest users to book home phlebotomist sample collection for diagnostic tests.',
   })
   @ResponseMessage('Home sample collection lab order booked successfully')
   async createLabOrder(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: string | undefined,
     @Body() dto: CreateLabOrderDto,
   ) {
     return this.labsService.createLabOrder(userId, dto);
+  }
+
+  @Get('orders')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get list of lab orders for dashboard or patient',
+  })
+  @ResponseMessage('Lab orders retrieved successfully')
+  async getLabOrders(
+    @Query('status') status?: LabOrderStatus,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @CurrentUser() user?: { id: string; role: string },
+  ) {
+    return this.labsService.getLabOrders(
+      {
+        status,
+        search,
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+      },
+      user,
+    );
+  }
+
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get KPI metrics for Lab Dashboard',
+  })
+  @ResponseMessage('Lab statistics retrieved successfully')
+  async getStats(@CurrentUser('id') userId?: string) {
+    return this.labsService.getLabStats(userId);
+  }
+
+  @Patch('orders/:id/status')
+  @Roles(Role.LAB, Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update lab order status',
+  })
+  @ResponseMessage('Lab order status updated successfully')
+  async updateStatus(
+    @Param('id') orderId: string,
+    @Body('status') status: LabOrderStatus,
+  ) {
+    return this.labsService.updateOrderStatus(orderId, status);
   }
 
   @Put('orders/:id/assign-technician')
