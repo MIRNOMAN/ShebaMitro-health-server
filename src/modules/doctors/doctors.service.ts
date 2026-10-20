@@ -267,7 +267,7 @@ export class DoctorsService {
       _count: { id: number };
     }> = [];
     try {
-      groupedBySpecialty = await this.prisma.doctorProfile.groupBy({
+      groupedBySpecialty = (await (this.prisma.doctorProfile as any).groupBy({
         by: ['specialization'],
         where: {
           deletedAt: null,
@@ -276,7 +276,7 @@ export class DoctorsService {
         _count: {
           id: true,
         },
-      });
+      })) as any;
     } catch (err: any) {
       this.logger.warn(
         `Could not group doctors by specialization: ${err.message}`,
