@@ -671,6 +671,40 @@ model Medicine {
   @@map("medicines")
 }
 
+model MedicalSpecialty {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  titleEn     String   @map("title_en")
+  titleBn     String   @map("title_bn")
+  icon        String   @default("HeartPulse")
+  gradient    String   @default("from-primary-teal to-emerald-accent")
+  badgeColor  String   @default("text-primary-teal bg-primary-teal/15 border-primary-teal/30") @map("badge_color")
+  description String?
+  keywords    String[] @default([])
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@index([titleEn])
+  @@map("medical_specialties")
+}
+
+model Icd10Diagnosis {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  diagnosisTitle String   @map("diagnosis_title")
+  category       String   @default("General")
+  isChronic      Boolean  @default(false) @map("is_chronic")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@index([diagnosisTitle])
+  @@map("icd10_diagnoses")
+}
+
 
 
 

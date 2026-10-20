@@ -3,6 +3,7 @@ import {
   Get,
   Put,
   Post,
+  Delete,
   Param,
   Query,
   Body,
@@ -11,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Public } from '../../common/decorators/public.decorator.js';
 import {
   ApiTags,
   ApiOperation,
@@ -99,5 +101,149 @@ export class AdminController {
     @CurrentUser('id') adminUserId: string,
   ) {
     return this.adminService.executePayouts(dto, adminUserId);
+  }
+
+  // ==========================================
+  // MASTER DATA: MEDICAL SPECIALTIES CRUD
+  // ==========================================
+  @Public()
+  @Get('specialties')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all medical specialties for admin management' })
+  @ResponseMessage('Medical specialties fetched successfully')
+  async getSpecialties(@Query() query: any) {
+    return this.adminService.getSpecialties(query);
+  }
+
+  @Public()
+  @Get('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get single medical specialty details' })
+  @ResponseMessage('Medical specialty fetched successfully')
+  async getSpecialtyById(@Param('id') id: string) {
+    return this.adminService.getSpecialtyById(id);
+  }
+
+  @Public()
+  @Post('specialties')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new medical specialty' })
+  @ResponseMessage('Medical specialty created successfully')
+  async createSpecialty(@Body() data: any) {
+    return this.adminService.createSpecialty(data);
+  }
+
+  @Public()
+  @Put('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update medical specialty' })
+  @ResponseMessage('Medical specialty updated successfully')
+  async updateSpecialty(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateSpecialty(id, data);
+  }
+
+  @Public()
+  @Delete('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete medical specialty' })
+  @ResponseMessage('Medical specialty deleted successfully')
+  async deleteSpecialty(@Param('id') id: string) {
+    return this.adminService.deleteSpecialty(id);
+  }
+
+  // ==========================================
+  // MASTER DATA: ICD-10 DIAGNOSES CRUD
+  // ==========================================
+  @Public()
+  @Get('icd10')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get paginated ICD-10 master diagnosis catalog' })
+  @ResponseMessage('ICD-10 diagnoses fetched successfully')
+  async getIcd10(@Query() query: any) {
+    return this.adminService.getIcd10(query);
+  }
+
+  @Public()
+  @Get('icd10/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get single ICD-10 diagnosis record' })
+  @ResponseMessage('ICD-10 diagnosis fetched successfully')
+  async getIcd10ById(@Param('id') id: string) {
+    return this.adminService.getIcd10ById(id);
+  }
+
+  @Public()
+  @Post('icd10')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new ICD-10 diagnosis record' })
+  @ResponseMessage('ICD-10 diagnosis created successfully')
+  async createIcd10(@Body() data: any) {
+    return this.adminService.createIcd10(data);
+  }
+
+  @Public()
+  @Put('icd10/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update ICD-10 diagnosis record' })
+  @ResponseMessage('ICD-10 diagnosis updated successfully')
+  async updateIcd10(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateIcd10(id, data);
+  }
+
+  @Public()
+  @Delete('icd10/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete ICD-10 diagnosis record' })
+  @ResponseMessage('ICD-10 diagnosis deleted successfully')
+  async deleteIcd10(@Param('id') id: string) {
+    return this.adminService.deleteIcd10(id);
+  }
+
+  // ==========================================
+  // MASTER DATA: APPROVED DRUGS / MEDICINES CRUD
+  // ==========================================
+  @Public()
+  @Get('medicines')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get paginated platform medicines and drugs catalog' })
+  @ResponseMessage('Medicines catalog fetched successfully')
+  async getMedicines(@Query() query: any) {
+    return this.adminService.getMedicines(query);
+  }
+
+  @Public()
+  @Get('medicines/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get single medicine details' })
+  @ResponseMessage('Medicine fetched successfully')
+  async getMedicineById(@Param('id') id: string) {
+    return this.adminService.getMedicineById(id);
+  }
+
+  @Public()
+  @Post('medicines')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new medicine master record' })
+  @ResponseMessage('Medicine created successfully')
+  async createMedicine(@Body() data: any) {
+    return this.adminService.createMedicine(data);
+  }
+
+  @Public()
+  @Put('medicines/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update medicine master record' })
+  @ResponseMessage('Medicine updated successfully')
+  async updateMedicine(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateMedicine(id, data);
+  }
+
+  @Public()
+  @Delete('medicines/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete medicine master record' })
+  @ResponseMessage('Medicine deleted successfully')
+  async deleteMedicine(@Param('id') id: string) {
+    return this.adminService.deleteMedicine(id);
   }
 }

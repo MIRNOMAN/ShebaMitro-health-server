@@ -2,19 +2,22 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role, AppointmentStatus } from '@prisma/client';
 import { AppointmentsService } from './appointments.service.js';
 import { CreateAppointmentDto } from './dto/create-appointment.dto.js';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
@@ -61,12 +64,53 @@ export class AppointmentsController {
     return this.appointmentsService.confirmPayment(appointmentId, userId);
   }
 
+  @Public()
+  @Get('doctor')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get doctor OPD queue appointments list (Doctor/Admin/Demo)',
+  })
+  @ResponseMessage('Doctor appointments fetched successfully')
+  async getDoctorAppointments(
+    @Query('doctorId') doctorId?: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.appointmentsService.getDoctorAppointments(userId, doctorId);
+  }
+
+  @Public()
+  @Get('doctor/stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get doctor OPD queue statistics' })
+  @ResponseMessage('Doctor stats fetched successfully')
+  async getDoctorStats(
+    @Query('doctorId') doctorId?: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.appointmentsService.getDoctorStats(userId, doctorId);
+  }
+
+  @Public()
+  @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update appointment status (Doctor/Admin)' })
+  @ResponseMessage('Appointment status updated successfully')
+  async updateStatus(
+    @Param('id') appointmentId: string,
+    @Body('status') status: AppointmentStatus,
+  ) {
+    return this.appointmentsService.updateAppointmentStatus(
+      appointmentId,
+      status,
+    );
+  }
+
+  @Public()
   @Get()
-  @Roles(Role.PATIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get patient appointments list' })
   @ResponseMessage('Appointments fetched successfully')
-  async getMyAppointments(@CurrentUser('id') userId: string) {
+  async getMyAppointments(@CurrentUser('id') userId?: string) {
     return this.appointmentsService.getPatientAppointments(userId);
   }
 

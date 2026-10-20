@@ -149,6 +149,9 @@ export class DoctorsService {
   /**
    * Get all medical specialties with dynamic doctor count per category
    */
+  /**
+   * Get all medical specialties with dynamic doctor count per category (100% database driven)
+   */
   async getSpecialtiesWithStats() {
     const toBnNumerals = (val: string | number) => {
       const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -158,110 +161,13 @@ export class DoctorsService {
       );
     };
 
-    const baseSpecialties = [
-      {
-        id: 'cardiology',
-        titleEn: 'Cardiology',
-        titleBn: 'হৃদরোগ (কার্ডিওলজি)',
-        icon: 'HeartPulse',
-        gradient: 'from-primary-teal to-emerald-accent',
-        badgeColor:
-          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
-        keywords: ['cardio', 'heart', 'কার্ডিওলজি'],
-      },
-      {
-        id: 'neurology',
-        titleEn: 'Neurology',
-        titleBn: 'স্নায়ুরোগ (নিউরোালজি)',
-        icon: 'Brain',
-        gradient: 'from-violet-accent to-primary-teal',
-        badgeColor:
-          'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
-        keywords: ['neuro', 'brain', 'নিউরো'],
-      },
-      {
-        id: 'pediatrics',
-        titleEn: 'Pediatrics',
-        titleBn: 'শিশু স্বাস্থ্য (পিডিয়াট্রিক্স)',
-        icon: 'Baby',
-        gradient: 'from-coral-accent to-violet-accent',
-        badgeColor:
-          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
-        keywords: ['pediatric', 'child', 'শিশু', 'পিডিয়া'],
-      },
-      {
-        id: 'orthopedics',
-        titleEn: 'Orthopedics',
-        titleBn: 'অস্থিরোগ (অর্থোপেডিক্স)',
-        icon: 'Bone',
-        gradient: 'from-emerald-accent to-primary-teal',
-        badgeColor:
-          'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
-        keywords: ['ortho', 'bone', 'অর্থোপেডিক'],
-      },
-      {
-        id: 'dermatology',
-        titleEn: 'Dermatology',
-        titleBn: 'চর্ম ও যৌনরোগ',
-        icon: 'Sparkles',
-        gradient: 'from-primary-teal to-violet-accent',
-        badgeColor:
-          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
-        keywords: ['derma', 'skin', 'চর্ম'],
-      },
-      {
-        id: 'gynecology',
-        titleEn: 'Gynecology',
-        titleBn: 'স্ত্রী ও প্রসূতি রোগ',
-        icon: 'UserCheck',
-        gradient: 'from-coral-accent to-emerald-accent',
-        badgeColor:
-          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
-        keywords: ['gyne', 'obs', 'স্ত্রী', 'প্রসূতি'],
-      },
-      {
-        id: 'ophthalmology',
-        titleEn: 'Ophthalmology',
-        titleBn: 'চক্ষুরোগ বিশেষজ্ঞ',
-        icon: 'Eye',
-        gradient: 'from-violet-accent to-emerald-accent',
-        badgeColor:
-          'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
-        keywords: ['ophthal', 'eye', 'চক্ষু'],
-      },
-      {
-        id: 'oncology',
-        titleEn: 'Oncology',
-        titleBn: 'ক্যান্সার বা অনকোলজি',
-        icon: 'ShieldPlus',
-        gradient: 'from-primary-teal to-coral-accent',
-        badgeColor:
-          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
-        keywords: ['onco', 'cancer', 'ক্যান্সার'],
-      },
-      {
-        id: 'psychiatry',
-        titleEn: 'Psychiatry',
-        titleBn: 'মানসিক স্বাস্থ্য ও সাইকিয়াট্রি',
-        icon: 'Smile',
-        gradient: 'from-emerald-accent to-violet-accent',
-        badgeColor:
-          'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
-        keywords: ['psych', 'mental', 'মানসিক'],
-      },
-      {
-        id: 'ent',
-        titleEn: 'ENT Care',
-        titleBn: 'ناک, কান ও গলা (ইএনটি)',
-        icon: 'Activity',
-        gradient: 'from-coral-accent to-primary-teal',
-        badgeColor:
-          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
-        keywords: ['ent', 'ear', 'nose', 'throat', 'কান', 'গলা'],
-      },
-    ];
+    // 1. Fetch active specialties directly from PostgreSQL database table
+    const dbSpecialties = await this.prisma.medicalSpecialty.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+    });
 
-    // Query active database doctors grouped by specialization
+    // 2. Query active database doctors grouped by specialization
     let groupedBySpecialty: Array<{
       specialization: string;
       _count: { id: number };
@@ -283,21 +189,21 @@ export class DoctorsService {
       );
     }
 
-    // Tally actual database doctor counts to respective categories
-    const results = baseSpecialties.map((item) => {
+    // 3. Tally actual database doctor counts to respective categories
+    const results = dbSpecialties.map((item) => {
       let dbMatchingCount = 0;
       for (const group of groupedBySpecialty) {
         const specName = (group.specialization || '').toLowerCase();
+        const keywords = item.keywords || [];
         const matches =
-          item.keywords.some((kw) => specName.includes(kw.toLowerCase())) ||
-          specName.includes(item.id.toLowerCase()) ||
+          keywords.some((kw) => specName.includes(kw.toLowerCase())) ||
+          specName.includes(item.code.toLowerCase()) ||
           specName.includes(item.titleEn.toLowerCase());
         if (matches) {
           dbMatchingCount += group._count.id;
         }
       }
 
-      // Format doctor count text dynamically based on real database records
       let doctorCountText = `${dbMatchingCount} Doctors`;
       let doctorCountBnText = `${toBnNumerals(dbMatchingCount)} জন ডাক্তার`;
 
@@ -310,32 +216,43 @@ export class DoctorsService {
       }
 
       return {
-        id: item.id,
+        id: item.code,
+        specialtyId: item.id,
+        code: item.code,
         titleEn: item.titleEn,
         titleBn: item.titleBn,
         count: dbMatchingCount,
         doctorCount: doctorCountText,
         doctorCountBn: doctorCountBnText,
-        icon: item.icon,
-        gradient: item.gradient,
-        badgeColor: item.badgeColor,
+        icon: item.icon || 'HeartPulse',
+        gradient: item.gradient || 'from-primary-teal to-emerald-accent',
+        badgeColor:
+          item.badgeColor ||
+          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+        description: item.description,
+        keywords: item.keywords,
+        isActive: item.isActive,
       };
     });
 
-    // Dynamically include any new specializations from DB not in base list
+    // 4. Also dynamically include any specialization from doctors table not yet registered in specialties table
     for (const group of groupedBySpecialty) {
       const specName = group.specialization;
       if (!specName) continue;
-      const alreadyHandled = baseSpecialties.some(
+      const alreadyHandled = dbSpecialties.some(
         (b) =>
-          b.keywords.some((kw) =>
+          (b.keywords || []).some((kw) =>
             specName.toLowerCase().includes(kw.toLowerCase()),
-          ) || specName.toLowerCase().includes(b.id.toLowerCase()),
+          ) ||
+          specName.toLowerCase().includes(b.code.toLowerCase()) ||
+          specName.toLowerCase().includes(b.titleEn.toLowerCase()),
       );
       if (!alreadyHandled) {
         const c = group._count.id;
         results.push({
           id: specName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          specialtyId: specName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          code: specName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
           titleEn: specName,
           titleBn: specName,
           count: c,
@@ -345,11 +262,100 @@ export class DoctorsService {
           gradient: 'from-primary-teal to-emerald-accent',
           badgeColor:
             'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+          description: `Specialized healthcare in ${specName}`,
+          keywords: [specName],
+          isActive: true,
         });
       }
     }
 
     return results;
+  }
+
+  /**
+   * Get single specialty by ID or code
+   */
+  async getSpecialtyById(idOrCode: string) {
+    const specialty = await this.prisma.medicalSpecialty.findFirst({
+      where: {
+        OR: [{ id: idOrCode }, { code: idOrCode }],
+      },
+    });
+
+    if (!specialty) {
+      throw new NotFoundException(
+        `Specialty with identifier ${idOrCode} not found`,
+      );
+    }
+
+    return specialty;
+  }
+
+  /**
+   * Create new medical specialty (100% database driven)
+   */
+  async createSpecialty(data: {
+    code: string;
+    titleEn: string;
+    titleBn: string;
+    icon?: string;
+    gradient?: string;
+    badgeColor?: string;
+    description?: string;
+    keywords?: string[];
+  }) {
+    const cleanCode = data.code
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-');
+    return this.prisma.medicalSpecialty.create({
+      data: {
+        code: cleanCode,
+        titleEn: data.titleEn,
+        titleBn: data.titleBn,
+        icon: data.icon || 'Stethoscope',
+        gradient: data.gradient || 'from-primary-teal to-emerald-accent',
+        badgeColor:
+          data.badgeColor ||
+          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+        description: data.description,
+        keywords: data.keywords || [data.titleEn.toLowerCase()],
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Update medical specialty
+   */
+  async updateSpecialty(
+    idOrCode: string,
+    data: {
+      titleEn?: string;
+      titleBn?: string;
+      icon?: string;
+      gradient?: string;
+      badgeColor?: string;
+      description?: string;
+      keywords?: string[];
+      isActive?: boolean;
+    },
+  ) {
+    const existing = await this.getSpecialtyById(idOrCode);
+    return this.prisma.medicalSpecialty.update({
+      where: { id: existing.id },
+      data,
+    });
+  }
+
+  /**
+   * Delete medical specialty
+   */
+  async deleteSpecialty(idOrCode: string) {
+    const existing = await this.getSpecialtyById(idOrCode);
+    return this.prisma.medicalSpecialty.delete({
+      where: { id: existing.id },
+    });
   }
 
   /**

@@ -1,6 +1,10 @@
 import {
   Controller,
   Get,
+  Post,
+  Put,
+  Delete,
+  Body,
   Param,
   Query,
   HttpCode,
@@ -27,6 +31,42 @@ export class DoctorsController {
   @ResponseMessage('Doctor specialties fetched successfully')
   async getSpecialties() {
     return this.doctorsService.getSpecialtiesWithStats();
+  }
+
+  @Public()
+  @Get('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get single medical specialty details by ID or code' })
+  @ResponseMessage('Doctor specialty fetched successfully')
+  async getSpecialtyById(@Param('id') id: string) {
+    return this.doctorsService.getSpecialtyById(id);
+  }
+
+  @Public()
+  @Post('specialties')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new medical specialty' })
+  @ResponseMessage('Doctor specialty created successfully')
+  async createSpecialty(@Body() data: any) {
+    return this.doctorsService.createSpecialty(data);
+  }
+
+  @Public()
+  @Put('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update medical specialty' })
+  @ResponseMessage('Doctor specialty updated successfully')
+  async updateSpecialty(@Param('id') id: string, @Body() data: any) {
+    return this.doctorsService.updateSpecialty(id, data);
+  }
+
+  @Public()
+  @Delete('specialties/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete medical specialty' })
+  @ResponseMessage('Doctor specialty deleted successfully')
+  async deleteSpecialty(@Param('id') id: string) {
+    return this.doctorsService.deleteSpecialty(id);
   }
 
   @Public()

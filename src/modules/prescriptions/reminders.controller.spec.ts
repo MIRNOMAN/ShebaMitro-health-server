@@ -75,9 +75,9 @@ describe('RemindersController', () => {
   describe('acknowledgeReminder', () => {
     it('should record TAKEN status and compute compliance rate', async () => {
       const result = await controller.acknowledgeReminder(
-        'user-patient-1',
         'rem-123',
         { status: ReminderStatus.TAKEN },
+        'user-patient-1',
       );
 
       expect(dosageParserService.acknowledgeReminder).toHaveBeenCalledWith(
@@ -94,9 +94,9 @@ describe('RemindersController', () => {
   describe('snoozeReminder', () => {
     it('should delay alarm by 15 mins by default', async () => {
       const result = await controller.snoozeReminder(
-        'user-patient-1',
         'rem-123',
         {},
+        'user-patient-1',
       );
 
       expect(dosageParserService.snoozeReminder).toHaveBeenCalledWith(
@@ -114,9 +114,9 @@ describe('RemindersController', () => {
       });
 
       const result = await controller.snoozeReminder(
-        'user-patient-1',
         'rem-123',
         { minutes: 30 },
+        'user-patient-1',
       );
 
       expect(dosageParserService.snoozeReminder).toHaveBeenCalledWith(
