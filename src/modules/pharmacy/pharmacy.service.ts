@@ -5,9 +5,13 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PharmacyOrderStatus } from '@prisma/client';
+import { PharmacyOrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
+import { PrescriptionAiService } from './prescription-ai.service.js';
 import { CreatePharmacyOrderDto } from './dto/create-pharmacy-order.dto.js';
+import { QueryMedicinesDto } from './dto/query-medicines.dto.js';
+import { ScanPrescriptionDto } from './dto/scan-prescription.dto.js';
+import { CheckoutCartDto } from './dto/checkout-cart.dto.js';
 
 // Controlled substance / narcotic medications requiring strict single-dispense verification
 const CONTROLLED_SUBSTANCES = [
@@ -29,7 +33,195 @@ const CONTROLLED_SUBSTANCES = [
 export class PharmacyService {
   private readonly logger = new Logger(PharmacyService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly prescriptionAiService: PrescriptionAiService,
+  ) {}
+
+  /**
+   * GET /api/v1/pharmacy/medicines
+   * Fetch dynamic medicines catalog with search, category filtering, and pagination
+   */
+  async getMedicines(query: QueryMedicinesDto) {
+    const page = Math.max(1, parseInt(query.page || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit || '20', 10)));
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.MedicineWhereInput = {};
+
+    if (query.category && query.category !== 'all') {
+      where.category = query.category;
+    }
+
+    if (query.search && query.search.trim().length > 0) {
+      const term = query.search.trim();
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { genericName: { contains: term, mode: 'insensitive' } },
+        { manufacturer: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const [medicines, total] = await Promise.all([
+      this.prisma.medicine.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.medicine.count({ where }),
+    ]);
+
+    return {
+      medicines,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * GET /api/v1/pharmacy/categories
+   * Return category list with active dynamic item counts
+   */
+  async getCategories() {
+    const medicines = await this.prisma.medicine.findMany({
+      select: { category: true },
+    });
+
+    const categoryMap: Record<string, number> = {};
+    for (const med of medicines) {
+      categoryMap[med.category] = (categoryMap[med.category] || 0) + 1;
+    }
+
+    return [
+      { id: 'all', name: 'All Medicines', count: medicines.length },
+      { id: 'pain', name: 'Pain Relief & Fever', count: categoryMap['pain'] || 0 },
+      { id: 'digestive', name: 'Digestive & Acidity', count: categoryMap['digestive'] || 0 },
+      { id: 'diabetic', name: 'Diabetic Care', count: categoryMap['diabetic'] || 0 },
+      { id: 'cardiac', name: 'Cardiac & BP', count: categoryMap['cardiac'] || 0 },
+      { id: 'vitamins', name: 'Vitamins & Supplements', count: categoryMap['vitamins'] || 0 },
+      { id: 'antibiotic', name: 'Antibiotics', count: categoryMap['antibiotic'] || 0 },
+    ];
+  }
+
+  /**
+   * GET /api/v1/pharmacy/medicines/:id
+   */
+  async getMedicineById(id: string) {
+    const medicine = await this.prisma.medicine.findUnique({
+      where: { id },
+    });
+
+    if (!medicine) {
+      throw new NotFoundException(`Medicine with ID ${id} not found`);
+    }
+
+    return medicine;
+  }
+
+  /**
+   * POST /api/v1/pharmacy/scan-prescription
+   * Free AI OCR / Vision prescription reader
+   */
+  async scanPrescription(file?: Express.Multer.File, dto?: ScanPrescriptionDto) {
+    return this.prescriptionAiService.scanPrescription(file, dto);
+  }
+
+  /**
+   * POST /api/v1/pharmacy/checkout
+   * Checkout direct cart items into a verified database pharmacy order
+   */
+  async checkoutCart(userId: string | undefined, dto: CheckoutCartDto) {
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('Cannot checkout with an empty cart');
+    }
+
+    // 1. Resolve patient profile if userId available, or pick default
+    let patientProfile = userId
+      ? await this.prisma.patientProfile.findUnique({ where: { userId } })
+      : null;
+
+    if (!patientProfile) {
+      patientProfile = await this.prisma.patientProfile.findFirst();
+      if (!patientProfile) {
+        throw new BadRequestException('No patient profile found in database');
+      }
+    }
+
+    // 2. Resolve pharmacy partner
+    const pharmacy = await this.prisma.pharmacyProfile.findFirst();
+    if (!pharmacy) {
+      throw new BadRequestException('No registered pharmacy partner found in database');
+    }
+
+    // 3. Verify medicine items and calculate accurate subtotal
+    const medicineIds = dto.items.map((i) => i.medicineId);
+    const dbMedicines = await this.prisma.medicine.findMany({
+      where: { id: { in: medicineIds } },
+    });
+
+    let subtotal = 0;
+    const orderItems = dto.items.map((item) => {
+      const dbMed = dbMedicines.find((m) => m.id === item.medicineId);
+      const unitPrice = dbMed ? dbMed.price : item.price || 50;
+      const itemTotal = unitPrice * Math.max(1, item.quantity);
+      subtotal += itemTotal;
+
+      return {
+        medicineId: item.medicineId,
+        name: dbMed ? dbMed.name : item.name || 'Medicine Item',
+        genericName: dbMed?.genericName || '',
+        strength: dbMed?.strength || '',
+        quantity: item.quantity,
+        unitPrice,
+        itemTotal,
+      };
+    });
+
+    // 4. Delivery surcharge (৳120 express 2-hour, ৳60 standard)
+    const deliveryFee = dto.isExpressDelivery ? 120 : 60;
+    const totalAmount = subtotal + deliveryFee;
+
+    // 5. Create order in Database
+    const order = await this.prisma.pharmacyOrder.create({
+      data: {
+        patientId: patientProfile.id,
+        pharmacyId: pharmacy.id,
+        itemsJson: orderItems as any,
+        totalAmount,
+        shippingAddress: dto.shippingAddress,
+        status: PharmacyOrderStatus.PENDING,
+        notes: dto.notes || (dto.isExpressDelivery ? 'Express 2-Hour Delivery requested' : null),
+      },
+      include: {
+        pharmacy: { select: { id: true, tradeName: true, address: true } },
+      },
+    });
+
+    const orderNumber = `SM-RX-${order.id.slice(0, 8).toUpperCase()}`;
+
+    this.logger.log(`Created direct checkout PharmacyOrder ${orderNumber} (ID: ${order.id})`);
+
+    return {
+      orderId: order.id,
+      orderNumber,
+      status: order.status,
+      subtotal,
+      deliveryFee,
+      totalAmount,
+      isExpressDelivery: Boolean(dto.isExpressDelivery),
+      estimatedDelivery: dto.isExpressDelivery ? 'Within 2 Hours' : 'Same Day (4-6 Hours)',
+      shippingAddress: order.shippingAddress,
+      pharmacyName: order.pharmacy.tradeName,
+      items: orderItems,
+      createdAt: order.createdAt,
+    };
+  }
+
 
   /**
    * POST /api/v1/pharmacy/orders

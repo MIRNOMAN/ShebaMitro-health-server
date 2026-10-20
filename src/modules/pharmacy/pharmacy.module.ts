@@ -4,6 +4,7 @@ import { DatabaseModule } from '../../database/database.module.js';
 import { PrescriptionModule } from '../prescriptions/prescriptions.module.js';
 import { PharmacyController } from './pharmacy.controller.js';
 import { PharmacyService } from './pharmacy.service.js';
+import { PrescriptionAiService } from './prescription-ai.service.js';
 import {
   ChronicRefillService,
   CHRONIC_REFILL_QUEUE,
@@ -19,7 +20,13 @@ import { ChronicRefillProcessor } from './chronic-refill.processor.js';
     }),
   ],
   controllers: [PharmacyController],
-  providers: [PharmacyService, ChronicRefillService, ChronicRefillProcessor],
-  exports: [PharmacyService, ChronicRefillService],
+  providers: [
+    PharmacyService,
+    PrescriptionAiService,
+    ChronicRefillService,
+    ChronicRefillProcessor,
+  ],
+  exports: [PharmacyService, PrescriptionAiService, ChronicRefillService],
 })
 export class PharmacyModule {}
+

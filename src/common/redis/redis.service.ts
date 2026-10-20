@@ -40,6 +40,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         lazyConnect: true,
       });
 
+      this.redisClient.on('error', (err) => {
+        this.isMemoryFallback = true;
+      });
+
       this.redisClient.connect().catch((err) => {
         this.logger.warn(
           `Redis client connect failed: ${err.message}. Using in-memory store.`,

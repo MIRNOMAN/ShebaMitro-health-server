@@ -2,7 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PharmacyOrderStatus } from '@prisma/client';
 import { PharmacyService } from './pharmacy.service.js';
+import { PrescriptionAiService } from './prescription-ai.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
+
 
 describe('PharmacyService', () => {
   let service: PharmacyService;
@@ -105,6 +107,10 @@ describe('PharmacyService', () => {
       providers: [
         PharmacyService,
         { provide: PrismaService, useValue: prismaService },
+        {
+          provide: PrescriptionAiService,
+          useValue: { scanPrescription: jest.fn() },
+        },
       ],
     }).compile();
 

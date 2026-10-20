@@ -59,11 +59,20 @@ export class ChatGateway
     const port = this.configService.get<number>('REDIS_PORT', 6379);
 
     try {
-      const pubClient = new Redis({ host, port, lazyConnect: true });
+      const pubClient = new Redis({
+        host,
+        port,
+        lazyConnect: true,
+        maxRetriesPerRequest: null,
+        enableOfflineQueue: false,
+        retryStrategy: () => null,
+      });
+      pubClient.on('error', () => {});
       const subClient = pubClient.duplicate();
+      subClient.on('error', () => {});
 
       pubClient.connect().catch((err) => {
-        this.logger.warn(`Redis pubClient connect failed: ${err.message}`);
+        this.logger.warn(`Redis pubClient connect failed: ${err.message}. Using default adapter.`);
       });
       subClient.connect().catch((err) => {
         this.logger.warn(`Redis subClient connect failed: ${err.message}`);

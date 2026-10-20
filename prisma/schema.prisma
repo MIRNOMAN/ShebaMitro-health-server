@@ -637,6 +637,33 @@ model BiomarkerRecord {
   @@map("biomarker_records")
 }
 
+model Medicine {
+  id                   String   @id @default(uuid())
+  name                 String
+  genericName          String   @map("generic_name")
+  manufacturer         String
+  type                 String   @default("Tablet")
+  strength             String
+  packSize             String   @map("pack_size")
+  price                Float
+  originalPrice        Float?   @map("original_price")
+  category             String   @default("pain")
+  requiresPrescription Boolean  @default(false) @map("requires_prescription")
+  inStock              Boolean  @default(true) @map("in_stock")
+  stockQuantity        Int      @default(100) @map("stock_quantity")
+  imageUrl             String?  @map("image_url")
+  description          String?
+  dosageGuidance       String?  @map("dosage_guidance")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@index([genericName])
+  @@index([category])
+  @@map("medicines")
+}
+
+
 
 
 

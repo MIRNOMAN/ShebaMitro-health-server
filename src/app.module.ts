@@ -78,6 +78,12 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
         connection: {
           host: configService.get<string>('redis.host') || '127.0.0.1',
           port: configService.get<number>('redis.port') || 6379,
+          maxRetriesPerRequest: null,
+          enableOfflineQueue: false,
+          retryStrategy: (times) => {
+            if (times > 3) return null; // stop reconnecting if Redis is not running locally
+            return Math.min(times * 1000, 3000);
+          },
         },
       }),
     }),
