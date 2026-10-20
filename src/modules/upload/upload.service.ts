@@ -99,7 +99,10 @@ export class UploadService {
   private extractFilename(urlOrFilename: string): string {
     if (!urlOrFilename) return '';
     try {
-      if (urlOrFilename.startsWith('http://') || urlOrFilename.startsWith('https://')) {
+      if (
+        urlOrFilename.startsWith('http://') ||
+        urlOrFilename.startsWith('https://')
+      ) {
         const parsed = new URL(urlOrFilename);
         return path.basename(parsed.pathname);
       }
@@ -112,7 +115,9 @@ export class UploadService {
   /**
    * Delete a file from disk by URL or filename
    */
-  async deleteFile(urlOrFilename: string): Promise<{ deleted: boolean; filename: string }> {
+  async deleteFile(
+    urlOrFilename: string,
+  ): Promise<{ deleted: boolean; filename: string }> {
     if (!urlOrFilename) {
       return { deleted: false, filename: '' };
     }

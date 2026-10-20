@@ -200,21 +200,24 @@ export class AppointmentsService {
     let notifications: any = null;
     try {
       notifications =
-        await this.notificationsService.sendAppointmentConfirmationNotification({
-          appointmentId: createdAppointment.id,
-          patientName:
-            createdAppointment.patient?.user?.name || 'Valued Patient',
-          patientEmail: createdAppointment.patient?.user?.email,
-          patientPhone: createdAppointment.patient?.user?.phone,
-          doctorName: createdAppointment.doctor?.name || 'Doctor',
-          doctorSpecialization:
-            createdAppointment.doctor?.specialization || 'Specialist',
-          slotStartTime: createdAppointment.slotStartTime,
-          slotEndTime: createdAppointment.slotEndTime,
-          chamberName: createdAppointment.notes || 'ShebaMitro Virtual Chamber',
-          consultFee: createdAppointment.doctor?.consultFee || 1200,
-          type: createdAppointment.type,
-        });
+        await this.notificationsService.sendAppointmentConfirmationNotification(
+          {
+            appointmentId: createdAppointment.id,
+            patientName:
+              createdAppointment.patient?.user?.name || 'Valued Patient',
+            patientEmail: createdAppointment.patient?.user?.email,
+            patientPhone: createdAppointment.patient?.user?.phone,
+            doctorName: createdAppointment.doctor?.name || 'Doctor',
+            doctorSpecialization:
+              createdAppointment.doctor?.specialization || 'Specialist',
+            slotStartTime: createdAppointment.slotStartTime,
+            slotEndTime: createdAppointment.slotEndTime,
+            chamberName:
+              createdAppointment.notes || 'ShebaMitro Virtual Chamber',
+            consultFee: createdAppointment.doctor?.consultFee || 1200,
+            type: createdAppointment.type,
+          },
+        );
     } catch (notifErr: any) {
       this.logger.warn(
         `Failed to dispatch appointment notifications: ${notifErr.message}`,

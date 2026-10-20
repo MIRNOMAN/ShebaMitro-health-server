@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service.js';
 import { SearchDoctorsQueryDto } from './dto/search-doctors-query.dto.js';

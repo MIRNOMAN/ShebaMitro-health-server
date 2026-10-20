@@ -70,9 +70,10 @@ export class NotificationsService {
   ): Promise<AppointmentNotificationResult> {
     const patientPhone = input.patientPhone || '+8801712345678';
     const patientEmail = input.patientEmail || 'patient@shebamitro.health';
-    const shortApptId = input.appointmentId.length > 8
-      ? `SM-${input.appointmentId.slice(0, 8).toUpperCase()}`
-      : `SM-${input.appointmentId}`;
+    const shortApptId =
+      input.appointmentId.length > 8
+        ? `SM-${input.appointmentId.slice(0, 8).toUpperCase()}`
+        : `SM-${input.appointmentId}`;
 
     const startDate = new Date(input.slotStartTime);
     const dateFormatted = startDate.toLocaleDateString('en-US', {
@@ -88,7 +89,9 @@ export class NotificationsService {
     });
 
     const isVideo = input.type === 'ONLINE';
-    const chamberOrMode = isVideo ? 'Live HD Video Consultation' : input.chamberName;
+    const chamberOrMode = isVideo
+      ? 'Live HD Video Consultation'
+      : input.chamberName;
 
     // 1. Compose SMS
     const smsMessage =

@@ -83,7 +83,10 @@ export class AppointmentsQueueService implements OnModuleInit, OnModuleDestroy {
             },
           ),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('BullMQ connection timeout')), 1000),
+            setTimeout(
+              () => reject(new Error('BullMQ connection timeout')),
+              1000,
+            ),
           ),
         ]);
         queuedInBullMQ = true;
@@ -124,7 +127,10 @@ export class AppointmentsQueueService implements OnModuleInit, OnModuleDestroy {
         const job = await Promise.race([
           this.queue.getJob(jobId),
           new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('BullMQ connection timeout')), 1000),
+            setTimeout(
+              () => reject(new Error('BullMQ connection timeout')),
+              1000,
+            ),
           ),
         ]);
         if (job) {

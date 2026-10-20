@@ -12,7 +12,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { PharmacyService } from './pharmacy.service.js';
@@ -40,7 +45,8 @@ export class PharmacyController {
   @Get('medicines')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get dynamic list of medicines (Public with Search and Category filters)',
+    summary:
+      'Get dynamic list of medicines (Public with Search and Category filters)',
   })
   @ResponseMessage('Medicines retrieved successfully')
   async getMedicines(@Query() query: QueryMedicinesDto) {
@@ -89,7 +95,8 @@ export class PharmacyController {
   @Post('checkout')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Checkout cart order (Supports COD, bKash, and Express 2-Hour Delivery)',
+    summary:
+      'Checkout cart order (Supports COD, bKash, and Express 2-Hour Delivery)',
   })
   @ResponseMessage('Pharmacy order placed successfully')
   async checkoutCart(

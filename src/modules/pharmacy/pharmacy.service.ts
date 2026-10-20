@@ -8,6 +8,7 @@ import {
 import { PharmacyOrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { PrescriptionAiService } from './prescription-ai.service.js';
+import { MedidataService } from './medidata.service.js';
 import { CreatePharmacyOrderDto } from './dto/create-pharmacy-order.dto.js';
 import { QueryMedicinesDto } from './dto/query-medicines.dto.js';
 import { ScanPrescriptionDto } from './dto/scan-prescription.dto.js';
@@ -36,6 +37,7 @@ export class PharmacyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly prescriptionAiService: PrescriptionAiService,
+    private readonly medidataService: MedidataService,
   ) {}
 
   /**
@@ -99,22 +101,55 @@ export class PharmacyService {
 
     return [
       { id: 'all', name: 'All Medicines', count: medicines.length },
-      { id: 'pain', name: 'Pain Relief & Fever', count: categoryMap['pain'] || 0 },
-      { id: 'digestive', name: 'Digestive & Acidity', count: categoryMap['digestive'] || 0 },
-      { id: 'diabetic', name: 'Diabetic Care', count: categoryMap['diabetic'] || 0 },
-      { id: 'cardiac', name: 'Cardiac & BP', count: categoryMap['cardiac'] || 0 },
-      { id: 'vitamins', name: 'Vitamins & Supplements', count: categoryMap['vitamins'] || 0 },
-      { id: 'antibiotic', name: 'Antibiotics', count: categoryMap['antibiotic'] || 0 },
+      {
+        id: 'pain',
+        name: 'Pain Relief & Fever',
+        count: categoryMap['pain'] || 0,
+      },
+      {
+        id: 'digestive',
+        name: 'Digestive & Acidity',
+        count: categoryMap['digestive'] || 0,
+      },
+      {
+        id: 'diabetic',
+        name: 'Diabetic Care',
+        count: categoryMap['diabetic'] || 0,
+      },
+      {
+        id: 'cardiac',
+        name: 'Cardiac & BP',
+        count: categoryMap['cardiac'] || 0,
+      },
+      {
+        id: 'vitamins',
+        name: 'Vitamins & Supplements',
+        count: categoryMap['vitamins'] || 0,
+      },
+      {
+        id: 'antibiotic',
+        name: 'Antibiotics',
+        count: categoryMap['antibiotic'] || 0,
+      },
     ];
   }
 
   /**
    * GET /api/v1/pharmacy/medicines/:id
+   * Supports local database UUIDs and dynamic MediData IDs (e.g. 14742)
    */
   async getMedicineById(id: string) {
-    const medicine = await this.prisma.medicine.findUnique({
-      where: { id },
+    let medicine = await this.prisma.medicine.findFirst({
+      where: {
+        OR: [{ id }, { id: `medidata-${id}` }],
+      },
     });
+
+    // If not found in local DB and ID is numeric or MediData prefixed, fetch live from MediData API
+    if (!medicine && (/^\d+$/.test(id) || id.startsWith('medidata-'))) {
+      const cleanId = id.replace('medidata-', '');
+      medicine = await this.medidataService.fetchFromMediData(cleanId);
+    }
 
     if (!medicine) {
       throw new NotFoundException(`Medicine with ID ${id} not found`);
@@ -124,10 +159,20 @@ export class PharmacyService {
   }
 
   /**
+   * Syncs top popular medicines from MediData API into local PostgreSQL
+   */
+  async syncMediData() {
+    return this.medidataService.syncPopularMediDataMedicines();
+  }
+
+  /**
    * POST /api/v1/pharmacy/scan-prescription
    * Free AI OCR / Vision prescription reader
    */
-  async scanPrescription(file?: Express.Multer.File, dto?: ScanPrescriptionDto) {
+  async scanPrescription(
+    file?: Express.Multer.File,
+    dto?: ScanPrescriptionDto,
+  ) {
     return this.prescriptionAiService.scanPrescription(file, dto);
   }
 
@@ -155,7 +200,9 @@ export class PharmacyService {
     // 2. Resolve pharmacy partner
     const pharmacy = await this.prisma.pharmacyProfile.findFirst();
     if (!pharmacy) {
-      throw new BadRequestException('No registered pharmacy partner found in database');
+      throw new BadRequestException(
+        'No registered pharmacy partner found in database',
+      );
     }
 
     // 3. Verify medicine items and calculate accurate subtotal
@@ -195,7 +242,9 @@ export class PharmacyService {
         totalAmount,
         shippingAddress: dto.shippingAddress,
         status: PharmacyOrderStatus.PENDING,
-        notes: dto.notes || (dto.isExpressDelivery ? 'Express 2-Hour Delivery requested' : null),
+        notes:
+          dto.notes ||
+          (dto.isExpressDelivery ? 'Express 2-Hour Delivery requested' : null),
       },
       include: {
         pharmacy: { select: { id: true, tradeName: true, address: true } },
@@ -204,7 +253,9 @@ export class PharmacyService {
 
     const orderNumber = `SM-RX-${order.id.slice(0, 8).toUpperCase()}`;
 
-    this.logger.log(`Created direct checkout PharmacyOrder ${orderNumber} (ID: ${order.id})`);
+    this.logger.log(
+      `Created direct checkout PharmacyOrder ${orderNumber} (ID: ${order.id})`,
+    );
 
     return {
       orderId: order.id,
@@ -214,14 +265,15 @@ export class PharmacyService {
       deliveryFee,
       totalAmount,
       isExpressDelivery: Boolean(dto.isExpressDelivery),
-      estimatedDelivery: dto.isExpressDelivery ? 'Within 2 Hours' : 'Same Day (4-6 Hours)',
+      estimatedDelivery: dto.isExpressDelivery
+        ? 'Within 2 Hours'
+        : 'Same Day (4-6 Hours)',
       shippingAddress: order.shippingAddress,
       pharmacyName: order.pharmacy.tradeName,
       items: orderItems,
       createdAt: order.createdAt,
     };
   }
-
 
   /**
    * POST /api/v1/pharmacy/orders

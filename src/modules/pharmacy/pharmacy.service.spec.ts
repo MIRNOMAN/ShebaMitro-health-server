@@ -5,7 +5,6 @@ import { PharmacyService } from './pharmacy.service.js';
 import { PrescriptionAiService } from './prescription-ai.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 
-
 describe('PharmacyService', () => {
   let service: PharmacyService;
   let prismaService: any;

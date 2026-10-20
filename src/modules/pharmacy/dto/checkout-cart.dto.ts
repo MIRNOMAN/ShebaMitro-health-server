@@ -69,7 +69,9 @@ export class CheckoutCartDto {
   @IsString()
   prescriptionImageUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Optional special delivery instructions or notes' })
+  @ApiPropertyOptional({
+    description: 'Optional special delivery instructions or notes',
+  })
   @IsOptional()
   @IsString()
   notes?: string;

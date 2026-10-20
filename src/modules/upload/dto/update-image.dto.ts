@@ -21,13 +21,15 @@ export class UpdateSingleImageDto {
 
 export class UpdateMultipleImagesDto {
   @ApiPropertyOptional({
-    description: 'Array or comma-separated list of old URLs to replace and delete',
+    description:
+      'Array or comma-separated list of old URLs to replace and delete',
   })
   @IsOptional()
   oldUrls?: string | string[];
 
   @ApiPropertyOptional({
-    description: 'Array or comma-separated list of old filenames to replace and delete',
+    description:
+      'Array or comma-separated list of old filenames to replace and delete',
   })
   @IsOptional()
   oldFilenames?: string | string[];

@@ -67,7 +67,9 @@ export class StatsController {
   @Public()
   @Patch()
   @ApiBearerAuth('BearerAuth')
-  @ApiOperation({ summary: 'Update stats counters or inject new live activity' })
+  @ApiOperation({
+    summary: 'Update stats counters or inject new live activity',
+  })
   @ResponseMessage('Platform stats updated successfully')
   async updateStats(@Body() dto: UpdateStatsDto) {
     return this.statsService.updateStats(dto);

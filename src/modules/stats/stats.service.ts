@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { UpdateStatsDto, CreateLiveActivityDto } from './dto/update-stats.dto.js';
+import {
+  UpdateStatsDto,
+  CreateLiveActivityDto,
+} from './dto/update-stats.dto.js';
 
 export interface StatCounterItem {
   id: string;
@@ -147,25 +150,38 @@ export class StatsService {
 
     const toBnDigits = (val: string | number) => {
       const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return String(val).replace(/[0-9]/g, (d) => bnDigits[parseInt(d, 10)] ?? d);
+      return String(val).replace(
+        /[0-9]/g,
+        (d) => bnDigits[parseInt(d, 10)] ?? d,
+      );
     };
 
-    const extractLocation = (str?: string | null): { en: string; bn: string } => {
+    const extractLocation = (
+      str?: string | null,
+    ): { en: string; bn: string } => {
       if (!str) return { en: 'Dhaka', bn: 'ঢাকা' };
       const s = str.toLowerCase();
-      if (s.includes('chattogram') || s.includes('chittagong')) return { en: 'Chattogram', bn: 'চট্টগ্রাম' };
+      if (s.includes('chattogram') || s.includes('chittagong'))
+        return { en: 'Chattogram', bn: 'চট্টগ্রাম' };
       if (s.includes('sylhet')) return { en: 'Sylhet', bn: 'সিলেট' };
       if (s.includes('rajshahi')) return { en: 'Rajshahi', bn: 'রাজশাহী' };
       if (s.includes('khulna')) return { en: 'Khulna', bn: 'খুলনা' };
       if (s.includes('barishal')) return { en: 'Barishal', bn: 'বরিশাল' };
-      if (s.includes('mymensingh')) return { en: 'Mymensingh', bn: 'ময়মনসিংহ' };
+      if (s.includes('mymensingh'))
+        return { en: 'Mymensingh', bn: 'ময়মনসিংহ' };
       if (s.includes('rangpur')) return { en: 'Rangpur', bn: 'রংপুর' };
-      if (s.includes('cumilla') || s.includes('comilla')) return { en: 'Cumilla', bn: 'কুমিল্লা' };
-      if (s.includes('dhanmondi')) return { en: 'Dhanmondi, Dhaka', bn: 'ধানমন্ডি, ঢাকা' };
-      if (s.includes('uttara')) return { en: 'Uttara, Dhaka', bn: 'উত্তরা, ঢাকা' };
-      if (s.includes('mirpur')) return { en: 'Mirpur, Dhaka', bn: 'মিরপুর, ঢাকা' };
-      if (s.includes('kalabagan')) return { en: 'Kalabagan, Dhaka', bn: 'কলাবাগান, ঢাকা' };
-      if (s.includes('dhaka') || s.includes('bsmmu') || s.includes('dmch')) return { en: 'Dhaka', bn: 'ঢাকা' };
+      if (s.includes('cumilla') || s.includes('comilla'))
+        return { en: 'Cumilla', bn: 'কুমিল্লা' };
+      if (s.includes('dhanmondi'))
+        return { en: 'Dhanmondi, Dhaka', bn: 'ধানমন্ডি, ঢাকা' };
+      if (s.includes('uttara'))
+        return { en: 'Uttara, Dhaka', bn: 'উত্তরা, ঢাকা' };
+      if (s.includes('mirpur'))
+        return { en: 'Mirpur, Dhaka', bn: 'মিরপুর, ঢাকা' };
+      if (s.includes('kalabagan'))
+        return { en: 'Kalabagan, Dhaka', bn: 'কলাবাগান, ঢাকা' };
+      if (s.includes('dhaka') || s.includes('bsmmu') || s.includes('dmch'))
+        return { en: 'Dhaka', bn: 'ঢাকা' };
       return { en: 'Bangladesh', bn: 'বাংলাদেশ' };
     };
 
@@ -235,7 +251,9 @@ export class StatsService {
         take: 6,
         orderBy: { updatedAt: 'desc' },
         include: {
-          doctor: { select: { name: true, hospital: true, specialization: true } },
+          doctor: {
+            select: { name: true, hospital: true, specialization: true },
+          },
         },
       });
 
@@ -274,7 +292,9 @@ export class StatsService {
         take: 4,
         orderBy: { updatedAt: 'desc' },
         include: {
-          doctor: { select: { name: true, hospital: true, specialization: true } },
+          doctor: {
+            select: { name: true, hospital: true, specialization: true },
+          },
         },
       });
 
@@ -311,7 +331,9 @@ export class StatsService {
 
       for (const order of recentOrders) {
         const pharmName = order.pharmacy?.tradeName || 'Model Pharmacy Express';
-        const loc = extractLocation(order.pharmacy?.address || order.shippingAddress);
+        const loc = extractLocation(
+          order.pharmacy?.address || order.shippingAddress,
+        );
         const timeObj = formatRelativeTime(order.updatedAt || order.createdAt);
         const isDelivered = order.status === 'DELIVERED';
         const action = isDelivered
@@ -339,7 +361,12 @@ export class StatsService {
         take: 4,
         where: { isApproved: true, deletedAt: null },
         orderBy: { updatedAt: 'desc' },
-        select: { name: true, hospital: true, specialization: true, updatedAt: true },
+        select: {
+          name: true,
+          hospital: true,
+          specialization: true,
+          updatedAt: true,
+        },
       });
 
       for (const doc of recentDoctors) {
@@ -362,11 +389,16 @@ export class StatsService {
         });
       }
     } catch (err: any) {
-      this.logger.error(`Error querying database for live activities: ${err.message}`);
+      this.logger.error(
+        `Error querying database for live activities: ${err.message}`,
+      );
     }
 
     // Sort by timestamp descending
-    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    activities.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
 
     // Prepend any custom activities added by admin
     const combined = [...this.customActivities, ...activities];
@@ -375,8 +407,10 @@ export class StatsService {
     if (combined.length === 0) {
       combined.push({
         id: 'live-1',
-        message: 'ShebaMitro healthcare network active across Bangladesh • Just now',
-        messageBn: 'সেবামিত্র হেলথকেয়ার নেটওয়ার্ক বাংলাদেশজুড়ে সক্রিয় • এইমাত্র',
+        message:
+          'ShebaMitro healthcare network active across Bangladesh • Just now',
+        messageBn:
+          'সেবামিত্র হেলথকেয়ার নেটওয়ার্ক বাংলাদেশজুড়ে সক্রিয় • এইমাত্র',
         timeAgo: 'Just now',
         timeAgoBn: 'এইমাত্র',
         timestamp: new Date().toISOString(),
@@ -405,7 +439,10 @@ export class StatsService {
 
     const toBnDigits = (val: string | number) => {
       const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return String(val).replace(/[0-9]/g, (d) => bnDigits[parseInt(d, 10)] ?? d);
+      return String(val).replace(
+        /[0-9]/g,
+        (d) => bnDigits[parseInt(d, 10)] ?? d,
+      );
     };
 
     try {
@@ -443,7 +480,9 @@ export class StatsService {
         totalReviews = ratingAgg._sum.reviewCount;
       }
     } catch (err: any) {
-      this.logger.warn(`Could not compute live database aggregate stats: ${err.message}`);
+      this.logger.warn(
+        `Could not compute live database aggregate stats: ${err.message}`,
+      );
     }
 
     // Pure dynamic values directly from database (NO fake baseline offsets)
@@ -621,7 +660,10 @@ export class StatsService {
   async getBentoData(): Promise<BentoEcosystemData> {
     const toBnDigits = (val: string | number) => {
       const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return String(val).replace(/[0-9]/g, (d) => bnDigits[parseInt(d, 10)] ?? d);
+      return String(val).replace(
+        /[0-9]/g,
+        (d) => bnDigits[parseInt(d, 10)] ?? d,
+      );
     };
 
     const doctorBnMap: Record<string, string> = {
@@ -658,13 +700,21 @@ export class StatsService {
         include: { prescriptionItem: true },
       });
 
-      const rxItem = reminder?.prescriptionItem || (await this.prisma.prescriptionItem.findFirst());
+      const rxItem =
+        reminder?.prescriptionItem ||
+        (await this.prisma.prescriptionItem.findFirst());
 
       if (rxItem) {
         medName = rxItem.medicineName;
         medNameBn = rxItem.medicineName;
-        const timing = rxItem.mealTiming === 'BEFORE_MEAL' ? 'Before Meals' : 'After Breakfast';
-        const timingBn = rxItem.mealTiming === 'BEFORE_MEAL' ? 'খাবারের পূর্বে' : 'নাস্তার পরে';
+        const timing =
+          rxItem.mealTiming === 'BEFORE_MEAL'
+            ? 'Before Meals'
+            : 'After Breakfast';
+        const timingBn =
+          rxItem.mealTiming === 'BEFORE_MEAL'
+            ? 'খাবারের পূর্বে'
+            : 'নাস্তার পরে';
         const form = rxItem.dosageForm || 'Tablet';
         const formBn = form === 'Capsule' ? 'ক্যাপসুল' : 'ট্যাবলেট';
         medInstruction = `${timing} • 1 ${form}`;
@@ -681,7 +731,9 @@ export class StatsService {
         }
       }
     } catch (err: any) {
-      this.logger.warn(`Could not load medicine reminder for bento: ${err.message}`);
+      this.logger.warn(
+        `Could not load medicine reminder for bento: ${err.message}`,
+      );
     }
 
     // 2. Fetch real active doctor from DB
@@ -737,7 +789,8 @@ export class StatsService {
         labName = lab.labName;
         labNameBn = lab.labName;
         if (lab.accreditation) {
-          labAccreditationBadge = lab.accreditation.split(' ')[0] || 'ISO 15189';
+          labAccreditationBadge =
+            lab.accreditation.split(' ')[0] || 'ISO 15189';
         }
       }
     } catch (err: any) {

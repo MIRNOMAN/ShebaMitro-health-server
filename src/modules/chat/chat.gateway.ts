@@ -72,7 +72,9 @@ export class ChatGateway
       subClient.on('error', () => {});
 
       pubClient.connect().catch((err) => {
-        this.logger.warn(`Redis pubClient connect failed: ${err.message}. Using default adapter.`);
+        this.logger.warn(
+          `Redis pubClient connect failed: ${err.message}. Using default adapter.`,
+        );
       });
       subClient.connect().catch((err) => {
         this.logger.warn(`Redis subClient connect failed: ${err.message}`);

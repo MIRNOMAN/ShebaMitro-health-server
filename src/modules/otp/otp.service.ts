@@ -39,10 +39,10 @@ export class OtpService {
     const phone = rawPhone.startsWith('+88')
       ? rawPhone
       : rawPhone.startsWith('88')
-      ? `+${rawPhone}`
-      : rawPhone.startsWith('0')
-      ? `+88${rawPhone}`
-      : `+880${rawPhone}`;
+        ? `+${rawPhone}`
+        : rawPhone.startsWith('0')
+          ? `+88${rawPhone}`
+          : `+880${rawPhone}`;
 
     const attemptKey = `otp_attempts:${phone}`;
 
@@ -99,10 +99,10 @@ export class OtpService {
     const phone = rawPhone.startsWith('+88')
       ? rawPhone
       : rawPhone.startsWith('88')
-      ? `+${rawPhone}`
-      : rawPhone.startsWith('0')
-      ? `+88${rawPhone}`
-      : `+880${rawPhone}`;
+        ? `+${rawPhone}`
+        : rawPhone.startsWith('0')
+          ? `+88${rawPhone}`
+          : `+880${rawPhone}`;
 
     const code = dto.code.trim();
     const otpKey = `otp:${phone}`;
@@ -142,7 +142,8 @@ export class OtpService {
     const secret = this.configService.get<string>('JWT_SECRET');
     const userId = user?.id || 'otp-user-' + Date.now();
     const userRole = user?.role || 'PATIENT';
-    const userEmail = user?.email || `${phone.replace(/\D/g, '')}@shebamitro.health`;
+    const userEmail =
+      user?.email || `${phone.replace(/\D/g, '')}@shebamitro.health`;
 
     const accessToken = this.jwtService.sign(
       {
@@ -158,7 +159,8 @@ export class OtpService {
       },
     );
 
-    const rawRefreshToken = crypto.randomBytes(40).toString('hex') + '.' + userId;
+    const rawRefreshToken =
+      crypto.randomBytes(40).toString('hex') + '.' + userId;
 
     return {
       message: 'OTP verified successfully',

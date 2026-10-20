@@ -152,7 +152,10 @@ export class DoctorsService {
   async getSpecialtiesWithStats() {
     const toBnNumerals = (val: string | number) => {
       const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-      return String(val).replace(/[0-9]/g, (d) => bnDigits[parseInt(d, 10)] ?? d);
+      return String(val).replace(
+        /[0-9]/g,
+        (d) => bnDigits[parseInt(d, 10)] ?? d,
+      );
     };
 
     const baseSpecialties = [
@@ -162,7 +165,8 @@ export class DoctorsService {
         titleBn: 'হৃদরোগ (কার্ডিওলজি)',
         icon: 'HeartPulse',
         gradient: 'from-primary-teal to-emerald-accent',
-        badgeColor: 'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+        badgeColor:
+          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
         keywords: ['cardio', 'heart', 'কার্ডিওলজি'],
       },
       {
@@ -171,7 +175,8 @@ export class DoctorsService {
         titleBn: 'স্নায়ুরোগ (নিউরোালজি)',
         icon: 'Brain',
         gradient: 'from-violet-accent to-primary-teal',
-        badgeColor: 'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
+        badgeColor:
+          'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
         keywords: ['neuro', 'brain', 'নিউরো'],
       },
       {
@@ -180,7 +185,8 @@ export class DoctorsService {
         titleBn: 'শিশু স্বাস্থ্য (পিডিয়াট্রিক্স)',
         icon: 'Baby',
         gradient: 'from-coral-accent to-violet-accent',
-        badgeColor: 'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
+        badgeColor:
+          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
         keywords: ['pediatric', 'child', 'শিশু', 'পিডিয়া'],
       },
       {
@@ -189,7 +195,8 @@ export class DoctorsService {
         titleBn: 'অস্থিরোগ (অর্থোপেডিক্স)',
         icon: 'Bone',
         gradient: 'from-emerald-accent to-primary-teal',
-        badgeColor: 'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
+        badgeColor:
+          'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
         keywords: ['ortho', 'bone', 'অর্থোপেডিক'],
       },
       {
@@ -198,7 +205,8 @@ export class DoctorsService {
         titleBn: 'চর্ম ও যৌনরোগ',
         icon: 'Sparkles',
         gradient: 'from-primary-teal to-violet-accent',
-        badgeColor: 'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+        badgeColor:
+          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
         keywords: ['derma', 'skin', 'চর্ম'],
       },
       {
@@ -207,7 +215,8 @@ export class DoctorsService {
         titleBn: 'স্ত্রী ও প্রসূতি রোগ',
         icon: 'UserCheck',
         gradient: 'from-coral-accent to-emerald-accent',
-        badgeColor: 'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
+        badgeColor:
+          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
         keywords: ['gyne', 'obs', 'স্ত্রী', 'প্রসূতি'],
       },
       {
@@ -216,7 +225,8 @@ export class DoctorsService {
         titleBn: 'চক্ষুরোগ বিশেষজ্ঞ',
         icon: 'Eye',
         gradient: 'from-violet-accent to-emerald-accent',
-        badgeColor: 'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
+        badgeColor:
+          'text-violet-accent bg-violet-accent/15 border-violet-accent/30',
         keywords: ['ophthal', 'eye', 'চক্ষু'],
       },
       {
@@ -225,7 +235,8 @@ export class DoctorsService {
         titleBn: 'ক্যান্সার বা অনকোলজি',
         icon: 'ShieldPlus',
         gradient: 'from-primary-teal to-coral-accent',
-        badgeColor: 'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+        badgeColor:
+          'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
         keywords: ['onco', 'cancer', 'ক্যান্সার'],
       },
       {
@@ -234,7 +245,8 @@ export class DoctorsService {
         titleBn: 'মানসিক স্বাস্থ্য ও সাইকিয়াট্রি',
         icon: 'Smile',
         gradient: 'from-emerald-accent to-violet-accent',
-        badgeColor: 'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
+        badgeColor:
+          'text-emerald-accent bg-emerald-accent/15 border-emerald-accent/30',
         keywords: ['psych', 'mental', 'মানসিক'],
       },
       {
@@ -243,15 +255,19 @@ export class DoctorsService {
         titleBn: 'ناک, কান ও গলা (ইএনটি)',
         icon: 'Activity',
         gradient: 'from-coral-accent to-primary-teal',
-        badgeColor: 'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
+        badgeColor:
+          'text-coral-accent bg-coral-accent/15 border-coral-accent/30',
         keywords: ['ent', 'ear', 'nose', 'throat', 'কান', 'গলা'],
       },
     ];
 
     // Query active database doctors grouped by specialization
-    let groupedBySpecialty: Array<{ specialization: string; _count: { id: number } }> = [];
+    let groupedBySpecialty: Array<{
+      specialization: string;
+      _count: { id: number };
+    }> = [];
     try {
-      groupedBySpecialty = (await this.prisma.doctorProfile.groupBy({
+      groupedBySpecialty = await this.prisma.doctorProfile.groupBy({
         by: ['specialization'],
         where: {
           deletedAt: null,
@@ -260,9 +276,11 @@ export class DoctorsService {
         _count: {
           id: true,
         },
-      })) as any;
+      });
     } catch (err: any) {
-      this.logger.warn(`Could not group doctors by specialization: ${err.message}`);
+      this.logger.warn(
+        `Could not group doctors by specialization: ${err.message}`,
+      );
     }
 
     // Tally actual database doctor counts to respective categories
@@ -310,8 +328,9 @@ export class DoctorsService {
       if (!specName) continue;
       const alreadyHandled = baseSpecialties.some(
         (b) =>
-          b.keywords.some((kw) => specName.toLowerCase().includes(kw.toLowerCase())) ||
-          specName.toLowerCase().includes(b.id.toLowerCase()),
+          b.keywords.some((kw) =>
+            specName.toLowerCase().includes(kw.toLowerCase()),
+          ) || specName.toLowerCase().includes(b.id.toLowerCase()),
       );
       if (!alreadyHandled) {
         const c = group._count.id;
@@ -324,7 +343,8 @@ export class DoctorsService {
           doctorCountBn: `${toBnNumerals(c)} জন ডাক্তার`,
           icon: 'Stethoscope',
           gradient: 'from-primary-teal to-emerald-accent',
-          badgeColor: 'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
+          badgeColor:
+            'text-primary-teal bg-primary-teal/15 border-primary-teal/30',
         });
       }
     }
@@ -486,7 +506,8 @@ export class DoctorsService {
           institution: 'Bangladesh College of Physicians and Surgeons (BCPS)',
           year: '2014',
           location: 'Dhaka, Bangladesh',
-          description: 'Specialist Fellowship Training and Board Certification.',
+          description:
+            'Specialist Fellowship Training and Board Certification.',
         },
       ],
     };

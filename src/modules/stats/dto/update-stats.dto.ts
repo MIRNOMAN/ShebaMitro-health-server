@@ -32,11 +32,17 @@ export class UpdateStatCounterDto {
 }
 
 export class CreateLiveActivityDto {
-  @ApiPropertyOptional({ example: 'Dr. Farah Ahmed completed a live video consultation in Dhaka • 14s ago' })
+  @ApiPropertyOptional({
+    example:
+      'Dr. Farah Ahmed completed a live video consultation in Dhaka • 14s ago',
+  })
   @IsString()
   message!: string;
 
-  @ApiPropertyOptional({ example: 'ডাঃ ফারাহ আহমেদ ঢাকা থেকে লাইভ ভিডিও কনসালটেশন সম্পন্ন করেছেন • ১৪ সে পূর্বে' })
+  @ApiPropertyOptional({
+    example:
+      'ডাঃ ফারাহ আহমেদ ঢাকা থেকে লাইভ ভিডিও কনসালটেশন সম্পন্ন করেছেন • ১৪ সে পূর্বে',
+  })
   @IsOptional()
   @IsString()
   messageBn?: string;

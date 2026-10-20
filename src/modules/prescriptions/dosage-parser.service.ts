@@ -478,10 +478,17 @@ export class DosageParserService {
     });
 
     const total = reminders.length;
-    const taken = reminders.filter((r) => r.status === ReminderStatus.TAKEN).length;
-    const pending = reminders.filter((r) => r.status === ReminderStatus.PENDING).length;
-    const skipped = reminders.filter((r) => r.status === ReminderStatus.SKIPPED).length;
-    const complianceRate = total > 0 ? Number(((taken / total) * 100).toFixed(1)) : 100;
+    const taken = reminders.filter(
+      (r) => r.status === ReminderStatus.TAKEN,
+    ).length;
+    const pending = reminders.filter(
+      (r) => r.status === ReminderStatus.PENDING,
+    ).length;
+    const skipped = reminders.filter(
+      (r) => r.status === ReminderStatus.SKIPPED,
+    ).length;
+    const complianceRate =
+      total > 0 ? Number(((taken / total) * 100).toFixed(1)) : 100;
 
     return {
       reminders,
@@ -516,7 +523,9 @@ export class DosageParserService {
     }
 
     if (!patientId) {
-      throw new NotFoundException('Patient record not found to attach reminder.');
+      throw new NotFoundException(
+        'Patient record not found to attach reminder.',
+      );
     }
 
     // Find or create prescription to hold item
@@ -604,6 +613,9 @@ export class DosageParserService {
       where: { id: reminderId },
     });
 
-    return { success: true, message: 'Medication reminder removed successfully' };
+    return {
+      success: true,
+      message: 'Medication reminder removed successfully',
+    };
   }
 }

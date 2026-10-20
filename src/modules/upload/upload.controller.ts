@@ -12,10 +12,7 @@ import {
   UseInterceptors,
   BadRequestException,
 } from '@nestjs/common';
-import {
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -134,10 +131,7 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('No image file uploaded');
     }
-    return this.uploadService.updateSingle(
-      file,
-      dto.oldUrl || dto.oldFilename,
-    );
+    return this.uploadService.updateSingle(file, dto.oldUrl || dto.oldFilename);
   }
 
   @Patch('single')
@@ -275,10 +269,7 @@ export class UploadController {
     @Query() queryDto: DeleteImageDto,
   ) {
     const target =
-      bodyDto?.url ||
-      bodyDto?.filename ||
-      queryDto?.url ||
-      queryDto?.filename;
+      bodyDto?.url || bodyDto?.filename || queryDto?.url || queryDto?.filename;
 
     if (!target) {
       if (
