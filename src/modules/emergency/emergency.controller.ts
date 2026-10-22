@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -28,6 +29,23 @@ import { ResponseMessage } from '../../common/decorators/response-message.decora
 @Controller('emergency')
 export class EmergencyController {
   constructor(private readonly emergencyService: EmergencyService) {}
+
+  @Get('estimate')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get pre-dispatch emergency estimate and nearby ambulance count',
+  })
+  @ResponseMessage('Emergency estimate retrieved successfully')
+  async getEstimate(
+    @Query('latitude') latitude?: number,
+    @Query('longitude') longitude?: number,
+  ) {
+    return this.emergencyService.getEstimate(
+      latitude !== undefined ? Number(latitude) : 23.8103,
+      longitude !== undefined ? Number(longitude) : 90.4125,
+    );
+  }
 
   @Post('sos')
   @Public()

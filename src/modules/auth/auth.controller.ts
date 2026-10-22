@@ -17,6 +17,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { VerifyEmailDto, ResendVerificationDto } from './dto/verify-email.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
@@ -33,21 +34,49 @@ export class AuthController {
   })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register a new user (Rate limited to 5 req/min)' })
-  @ResponseMessage('Registration successful')
-  async register(
-    @Body() registerDto: RegisterDto,
+  @ApiOperation({
+    summary: 'Register a new user and dispatch 6-digit email verification OTP',
+  })
+  @ResponseMessage('Registration successful. Verification code sent to email.')
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify account email with 6-digit OTP code and authenticate',
+  })
+  @ResponseMessage('Email verified successfully')
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(registerDto);
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    const result = await this.authService.verifyEmail(dto);
+    if (result.accessToken) {
+      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    }
+    return result;
+  }
 
-    return {
-      user: result.user,
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      expiresIn: result.expiresIn,
-    };
+  @Public()
+  @Throttle({
+    default: { limit: 5, ttl: 60000 },
+    auth: { limit: 5, ttl: 60000 },
+  })
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Resend 6-digit email verification code',
+  })
+  @ResponseMessage('Verification code resent successfully')
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendEmailVerification(dto.email);
   }
 
   @Public()
