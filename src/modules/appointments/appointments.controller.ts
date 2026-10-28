@@ -114,6 +114,7 @@ export class AppointmentsController {
     return this.appointmentsService.getPatientAppointments(userId);
   }
 
+  @Public()
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get appointment details by ID' })

@@ -344,6 +344,8 @@ export class AppointmentsService {
             name: true,
             specialization: true,
             consultFee: true,
+            hospital: true,
+            bmdcRegNo: true,
           },
         },
         patient: {
