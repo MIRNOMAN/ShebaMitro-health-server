@@ -53,6 +53,15 @@ export class PrescriptionsController {
     return this.prescriptionsService.createPrescription(userId, dto);
   }
 
+  @Public()
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all prescriptions for the patient' })
+  @ResponseMessage('Prescriptions fetched successfully')
+  async getMyPrescriptions(@CurrentUser('id') userId?: string) {
+    return this.prescriptionsService.getPatientPrescriptions(userId);
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get prescription details by ID' })

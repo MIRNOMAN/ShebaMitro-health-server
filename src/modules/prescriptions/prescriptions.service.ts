@@ -341,6 +341,7 @@ export class PrescriptionsService {
             id: true,
             name: true,
             specialization: true,
+            hospital: true,
             bmdcRegNo: true,
           },
         },
@@ -359,5 +360,45 @@ export class PrescriptionsService {
     }
 
     return prescription;
+  }
+
+  /**
+   * Get all prescriptions for a patient (or all recent if public)
+   */
+  async getPatientPrescriptions(userId?: string) {
+    let patientId: string | undefined;
+    if (userId) {
+      const patient = await this.prisma.patientProfile.findUnique({
+        where: { userId },
+      });
+      if (patient) {
+        patientId = patient.id;
+      }
+    }
+
+    return this.prisma.prescription.findMany({
+      where: patientId ? { patientId } : undefined,
+      include: {
+        items: true,
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            hospital: true,
+            bmdcRegNo: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            userId: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
   }
 }
