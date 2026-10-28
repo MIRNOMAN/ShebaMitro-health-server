@@ -1,5 +1,10 @@
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { Module, ValidationPipe } from '@nestjs/common';
+import {
+  Module,
+  ValidationPipe,
+  NestModule,
+  MiddlewareConsumer,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import {
@@ -42,6 +47,7 @@ import { PaginationModule } from './common/pagination/pagination.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor.js';
+import { RobotsMiddleware } from './common/middleware/robots.middleware.js';
 
 @Module({
   imports: [
@@ -157,4 +163,8 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RobotsMiddleware).forRoutes('*');
+  }
+}

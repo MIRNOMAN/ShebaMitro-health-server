@@ -11,6 +11,7 @@ import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor.js';
 import { WinstonLoggingInterceptor } from './common/interceptors/winston-logging.interceptor.js';
+import { robotsMiddleware } from './common/middleware/robots.middleware.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -24,6 +25,10 @@ async function bootstrap() {
 
   // ── Global Prefix ────────────────────────────────────────────
   app.setGlobalPrefix('api/v1');
+
+  // ── Search Engine Crawling & Robots Protection ───────────────
+  // Blocks crawlers on /docs via X-Robots-Tag & serves /robots.txt
+  app.use(robotsMiddleware);
 
   // ── Security & Middleware (Helmet HTTP Headers) ─────────────
   app.use(
@@ -259,6 +264,9 @@ async function bootstrap() {
   );
   logger.log(
     `🔒 Security: Helmet, Strict CORS, Throttler Rate Limiting, and Winston PHI/PII Masking Active`,
+  );
+  logger.log(
+    `🤖 Robots Protection: Crawlers blocked via /robots.txt (Disallow: /) and X-Robots-Tag on /docs`,
   );
   logger.log(`🌍 Environment: ${nodeEnv}`);
 }
