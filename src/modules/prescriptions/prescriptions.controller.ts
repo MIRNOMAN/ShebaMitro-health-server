@@ -15,6 +15,7 @@ import { CreatePrescriptionDto } from './dto/create-prescription.dto.js';
 import { VerifyDrugSafetyDto } from './dto/verify-drug-safety.dto.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Public } from '../../common/decorators/public.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator.js';
 
@@ -62,6 +63,7 @@ export class PrescriptionsController {
     return this.prescriptionsService.getPatientPrescriptions(userId);
   }
 
+  @Public()
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get prescription details by ID' })
