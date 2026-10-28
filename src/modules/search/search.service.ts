@@ -81,53 +81,54 @@ export class SearchService {
    */
   async getTrendingSearches(): Promise<string[]> {
     try {
-      const [specialties, labTests, medicines, diagnoses] = await Promise.all([
-        this.prisma.medicalSpecialty.findMany({
-          where: { isActive: true },
-          take: 3,
-          select: { titleEn: true },
-          orderBy: { titleEn: 'asc' },
-        }),
-        this.prisma.labTest.findMany({
-          take: 3,
-          select: { testName: true },
-          orderBy: { isPopular: 'desc' },
-        }),
-        this.prisma.medicine.findMany({
-          take: 3,
-          select: { name: true },
-          orderBy: { name: 'asc' },
-        }),
-        this.prisma.icd10Diagnosis.findMany({
-          where: { isActive: true },
-          take: 2,
-          select: { diagnosisTitle: true },
-        }),
-      ]);
+      const [specialties, doctorSpecializations, labTests, medicines, diagnoses] =
+        await Promise.all([
+          this.prisma.medicalSpecialty.findMany({
+            where: { isActive: true },
+            take: 4,
+            select: { titleEn: true },
+            orderBy: { titleEn: 'asc' },
+          }),
+          this.prisma.doctorProfile.findMany({
+            where: { deletedAt: null },
+            take: 4,
+            select: { specialization: true },
+            distinct: ['specialization'],
+          }),
+          this.prisma.labTest.findMany({
+            take: 3,
+            select: { testName: true },
+            orderBy: { isPopular: 'desc' },
+          }),
+          this.prisma.medicine.findMany({
+            take: 3,
+            select: { name: true },
+            orderBy: { name: 'asc' },
+          }),
+          this.prisma.icd10Diagnosis.findMany({
+            where: { isActive: true },
+            take: 2,
+            select: { diagnosisTitle: true },
+          }),
+        ]);
 
       const tags: string[] = [];
-      diagnoses.forEach((d) => d.diagnosisTitle && tags.push(d.diagnosisTitle));
       specialties.forEach((s) => s.titleEn && tags.push(s.titleEn));
+      doctorSpecializations.forEach((d) => d.specialization && tags.push(d.specialization));
       labTests.forEach((t) => t.testName && tags.push(t.testName));
       medicines.forEach((m) => m.name && tags.push(m.name));
+      diagnoses.forEach((d) => {
+        if (d.diagnosisTitle && d.diagnosisTitle.length <= 30) {
+          tags.push(d.diagnosisTitle);
+        }
+      });
 
       const unique = Array.from(new Set(tags.filter((t) => Boolean(t && t.trim()))));
-      if (unique.length >= 3) {
-        return unique.slice(0, 8);
-      }
+      return unique.slice(0, 8);
     } catch (error) {
       this.logger.error('Error fetching dynamic trending searches from DB:', error);
+      return [];
     }
-
-    // Safe fallback if database is empty
-    return [
-      'Chest Pain',
-      'Cardiologist',
-      'Full Body Checkup',
-      'Migraine',
-      'Diabetes Test',
-      'Paracetamol',
-    ];
   }
 
   private async searchDoctors(term: string, limit: number): Promise<SearchResultItem[]> {
@@ -173,7 +174,7 @@ export class SearchService {
           category: 'doctor' as const,
           subtitle,
           badge: 'Doctor',
-          href: `/doctors?search=${encodeURIComponent(rawName)}`,
+          href: `/doctors/${doc.id}`,
         };
       });
     } catch (error) {
