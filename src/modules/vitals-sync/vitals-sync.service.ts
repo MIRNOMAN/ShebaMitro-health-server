@@ -319,8 +319,18 @@ export class VitalsSyncService {
    * Retrieve synced vitals for a patient
    */
   async getPatientVitals(patientId: string, limit = 50) {
+    let targetPatientId = patientId;
+    const profile = await this.prisma.patientProfile.findFirst({
+      where: {
+        OR: [{ id: patientId }, { userId: patientId }],
+      },
+    });
+    if (profile) {
+      targetPatientId = profile.id;
+    }
+
     return this.prisma.biometricVital.findMany({
-      where: { patientId },
+      where: { patientId: targetPatientId },
       orderBy: { recordedAt: 'desc' },
       take: limit,
     });
@@ -330,9 +340,21 @@ export class VitalsSyncService {
    * Retrieve triggered alerts for a patient or doctor
    */
   async getAlerts(filter: { patientId?: string; doctorId?: string }) {
+    let resolvedPatientId = filter.patientId;
+    if (filter.patientId) {
+      const profile = await this.prisma.patientProfile.findFirst({
+        where: {
+          OR: [{ id: filter.patientId }, { userId: filter.patientId }],
+        },
+      });
+      if (profile) {
+        resolvedPatientId = profile.id;
+      }
+    }
+
     return this.prisma.vitalAlert.findMany({
       where: {
-        ...(filter.patientId ? { patientId: filter.patientId } : {}),
+        ...(resolvedPatientId ? { patientId: resolvedPatientId } : {}),
         ...(filter.doctorId ? { doctorId: filter.doctorId } : {}),
       },
       orderBy: { createdAt: 'desc' },
