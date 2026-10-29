@@ -423,17 +423,31 @@ export class DoctorsService {
     const consultFee = doc.consultFee || 1200;
     const followUpFee = doc.followUpFee || Math.round(consultFee * 0.6);
 
+    const docDays =
+      doc.availabilities && doc.availabilities.length > 0
+        ? Array.from(
+            new Set(
+              doc.availabilities.map((a: any) => {
+                const d = (a.dayOfWeek || '').slice(0, 3);
+                return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase();
+              }),
+            ),
+          )
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Sat'];
+
     const chambers = [
       {
         id: `ch-1-${doc.id.slice(0, 8)}`,
         name: doc.hospital || 'ShebaMitro Specialized Hospital',
-        address: '18/F Bir Uttam Qazi Nuruzzaman Sarak, Panthapath',
+        address: doc.hospital
+          ? `${doc.hospital} Chamber Complex, Dhaka`
+          : '18/F Bir Uttam Qazi Nuruzzaman Sarak, Panthapath',
         area: 'Panthapath',
         city: 'Dhaka',
-        mapTag: 'Panthapath, Dhanmondi',
+        mapTag: 'Chamber & OPD',
         consultationFee: consultFee,
         followupFee: followUpFee,
-        availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Sat'],
+        availableDays: docDays,
       },
       {
         id: `ch-2-${doc.id.slice(0, 8)}`,
