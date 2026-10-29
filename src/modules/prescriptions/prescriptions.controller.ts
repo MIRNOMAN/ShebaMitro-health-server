@@ -4,11 +4,12 @@ import {
   Get,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { PrescriptionsService } from './prescriptions.service.js';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto.js';
@@ -54,13 +55,16 @@ export class PrescriptionsController {
     return this.prescriptionsService.createPrescription(userId, dto);
   }
 
-  @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all prescriptions for the patient' })
+  @ApiOperation({ summary: 'Get all prescriptions for the logged-in patient' })
+  @ApiQuery({ name: 'patientId', required: false, description: 'Optional Patient Profile ID filter' })
   @ResponseMessage('Prescriptions fetched successfully')
-  async getMyPrescriptions(@CurrentUser('id') userId?: string) {
-    return this.prescriptionsService.getPatientPrescriptions(userId);
+  async getMyPrescriptions(
+    @CurrentUser('id') userId?: string,
+    @Query('patientId') queryPatientId?: string,
+  ) {
+    return this.prescriptionsService.getPatientPrescriptions(userId, queryPatientId);
   }
 
   @Public()

@@ -363,21 +363,27 @@ export class PrescriptionsService {
   }
 
   /**
-   * Get all prescriptions for a patient (or all recent if public)
+   * Get all prescriptions for a patient (filtered securely by patient profile)
    */
-  async getPatientPrescriptions(userId?: string) {
-    let patientId: string | undefined;
-    if (userId) {
-      const patient = await this.prisma.patientProfile.findUnique({
-        where: { userId },
+  async getPatientPrescriptions(userId?: string, queryPatientId?: string) {
+    let patientId: string | undefined = queryPatientId;
+    if (!patientId && userId) {
+      const patient = await this.prisma.patientProfile.findFirst({
+        where: {
+          OR: [{ userId }, { id: userId }],
+        },
       });
       if (patient) {
         patientId = patient.id;
       }
     }
 
+    if (!patientId) {
+      return [];
+    }
+
     return this.prisma.prescription.findMany({
-      where: patientId ? { patientId } : undefined,
+      where: { patientId },
       include: {
         items: true,
         doctor: {
